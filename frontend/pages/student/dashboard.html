@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - College Alien</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="/" class="logo">College Alien</a>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html" class="active">Dashboard</a></li>
+                <li><a href="attendance.html">Attendance</a></li>
+                <li><a href="assignments.html">Assignments</a></li>
+                <li><a href="cgpa.html">CGPA</a></li>
+                <li><a href="messages.html">Messages</a></li>
+                <li><a href="profile.html">👤 Profile</a></li>
+                <li class="keep"><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+                <li class="keep"><button onclick="logout()" class="btn btn-danger">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+
+    <main class="container main-content">
+        <div class="dashboard-header">
+            <h1>Welcome back, <span id="user-name">Student</span>!</h1>
+            <p class="dashboard-greeting">Here's your academic overview for today</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-value" id="overall-attendance">85%</div>
+                <div class="stat-label">Overall Attendance</div>
+            </div>
+
+            <div class="stat-card warning">
+                <div class="stat-icon">📝</div>
+                <div class="stat-value" id="pending-assignments">3</div>
+                <div class="stat-label">Pending Assignments</div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-value" id="cgpa-display">0.00</div>
+                <div class="stat-label">Current CGPA</div>
+            </div>
+
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <a href="attendance.html" class="quick-action">
+                <div class="quick-action-icon">📊</div>
+                <div class="quick-action-title">View Attendance</div>
+                <div class="quick-action-desc">Check your attendance records</div>
+            </a>
+
+            <a href="assignments.html" class="quick-action">
+                <div class="quick-action-icon">📋</div>
+                <div class="quick-action-title">Assignments</div>
+                <div class="quick-action-desc">Submit and track assignments</div>
+            </a>
+
+            <a href="cgpa.html" class="quick-action">
+                <div class="quick-action-icon">🧮</div>
+                <div class="quick-action-title">CGPA Calculator</div>
+                <div class="quick-action-desc">Calculate your grades</div>
+            </a>
+
+            <a href="messages.html" class="quick-action">
+                <div class="quick-action-icon">💬</div>
+                <div class="quick-action-title">Messages</div>
+                <div class="quick-action-desc">Chat with teachers</div>
+            </a>
+            <!-- ✅ UPDATE your announcements section: -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <h3 class="card-title">📢 Recent Announcements</h3>
+                    <p class="card-subtitle">Important updates from administration</p>
+                </div>
+                <div id="announcements-list" style="max-height: 250px; overflow-y: auto;">
+                    <div class="loading"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="grid grid-cols-2">
+            <!-- Recent Assignments -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent Assignments</h3>
+                    <p class="card-subtitle">Latest assignment updates</p>
+                </div>
+                <div id="recent-assignments" style="max-height: 300px; overflow-y: auto; padding: 10px;">
+                    <div class="loading"></div>
+                </div>
+            </div>
+
+            <!-- Subject-wise Attendance -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Subject-wise Attendance</h3>
+                    <p class="card-subtitle">Your attendance breakdown</p>
+                </div>
+                <div id="subject-attendance" style="max-height: 300px; overflow-y: auto; padding: 10px;">
+                    <div class="loading"></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="../../assets/js/main.js"></script>
+    <script src="../../assets/js/dashboard.js"></script>
+    <script>
+        // ✅ REPLACE YOUR CURRENT loadAnnouncements FUNCTION WITH THIS:
+        async function loadAnnouncements() {
+            try {
+                const response = await fetch('/api/announcements', {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                        // ✅ Add cache-busting to prevent stale data
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch announcements');
+                }
+
+                const data = await response.json();
+                const container = document.getElementById('announcements-list');
+
+                // ✅ Only show ACTIVE announcements
+                const activeAnnouncements = data.announcements.filter(ann =>
+                    ann.status === 'published' || ann.active === true
+                );
+
+                if (activeAnnouncements && activeAnnouncements.length > 0) {
+                    container.innerHTML = activeAnnouncements.slice(0, 3).map(announcement => `
+                <div style="padding: 15px; border-bottom: 1px solid #eee; margin: 5px 0;">
+                    <h5 style="color: #007bff; margin: 0 0 8px 0; font-size: 16px;">${announcement.title}</h5>
+                    <p style="margin: 0 0 8px 0; color: #666; line-height: 1.5;">${announcement.content}</p>
+                    <small style="color: #999;">📅 ${new Date(announcement.createdAt).toLocaleDateString()}</small>
+                </div>
+            `).join('');
+                } else {
+                    container.innerHTML = `
+                <div style="text-align: center; padding: 30px; color: #666;">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">📭</div>
+                    <p>No active announcements</p>
+                    <small>Check back later for updates</small>
+                </div>
+            `;
+                }
+            } catch (error) {
+                console.error('Failed to load announcements:', error);
+                document.getElementById('announcements-list').innerHTML = `
+            <div style="color: #dc3545; padding: 20px; text-align: center;">
+                <p>Unable to load announcements</p>
+                <small>Please try refreshing the page</small>
+            </div>
+        `;
+            }
+        }
+
+        // ✅ AUTO-REFRESH ANNOUNCEMENTS EVERY 30 SECONDS
+        document.addEventListener('DOMContentLoaded', function () {
+            loadAnnouncements();
+
+            // Auto-refresh every 30 seconds
+            setInterval(loadAnnouncements, 30000);
+        });
+        // Function to fetch and update CGPA on dashboard
+        async function updateDashboardCGPA() {
+            try {
+                const response = await fetch('/api/student/grades', {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch grades');
+                }
+
+                const data = await response.json();
+
+                // Update CGPA display elements (adjust IDs to match your dashboard)
+                const cgpaDisplay = document.getElementById('cgpa-display');
+                const cgpaText = document.getElementById('cgpa-text');
+                const cgpaValue = document.getElementById('cgpa-value');
+
+                if (cgpaDisplay) {
+                    cgpaDisplay.textContent = data.cgpa ? data.cgpa.toFixed(2) : '0.00';
+                }
+
+                if (cgpaText) {
+                    cgpaText.textContent = data.cgpa ? data.cgpa.toFixed(2) : '0.00';
+                }
+
+                if (cgpaValue) {
+                    cgpaValue.textContent = data.cgpa ? data.cgpa.toFixed(2) : '0.00';
+                }
+
+                // Update CGPA progress bar if you have one
+                const cgpaProgress = document.getElementById('cgpa-progress');
+                if (cgpaProgress && data.cgpa) {
+                    const percentage = (data.cgpa / 10) * 100; // Convert to percentage
+                    cgpaProgress.style.width = percentage + '%';
+                }
+
+                // Update any CGPA cards
+                const cgpaCards = document.querySelectorAll('.cgpa-number, .cgpa-score');
+                cgpaCards.forEach(card => {
+                    card.textContent = data.cgpa ? data.cgpa.toFixed(2) : '0.00';
+                });
+
+                console.log('CGPA updated successfully:', data.cgpa);
+
+            } catch (error) {
+                console.error('Error updating CGPA:', error);
+                // Set fallback value
+                const cgpaElements = document.querySelectorAll('#cgpa-display, #cgpa-text, #cgpa-value, .cgpa-number');
+                cgpaElements.forEach(element => {
+                    element.textContent = '0.00';
+                });
+            }
+        }
+
+        // Call function when dashboard loads
+        window.addEventListener('DOMContentLoaded', function () {
+            updateDashboardCGPA();
+        });
+
+        // Optional: Auto-refresh CGPA every 30 seconds
+        setInterval(updateDashboardCGPA, 30000);
+
+        // Optional: Refresh CGPA when user clicks refresh button
+        const refreshBtn = document.getElementById('refresh-cgpa-btn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', updateDashboardCGPA);
+        }
+        // Debug function to check CGPA API response
+        async function debugCGPA() {
+            console.log('=== CGPA DEBUG ===');
+
+            try {
+                const response = await fetch('/api/student/grades', {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+                });
+
+                console.log('API Response Status:', response.status);
+
+                const data = await response.json();
+                console.log('API Data:', data);
+                console.log('CGPA from API:', data.cgpa);
+
+                // Check what elements exist on page
+                const cgpaElements = document.querySelectorAll('[id*="cgpa"], [class*="cgpa"]');
+                console.log('Found CGPA elements:', cgpaElements);
+
+                cgpaElements.forEach((element, index) => {
+                    console.log(`Element ${index}:`, element.id, element.className, element.textContent);
+                });
+
+            } catch (error) {
+                console.error('Debug error:', error);
+            }
+        }
+
+        // Call debug function
+        debugCGPA();
+
+
+
+
+
+    </script>
+</body>
+
+</html>

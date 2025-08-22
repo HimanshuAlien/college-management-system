@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - College Management System</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .auth-header p {
+            color: var(--text-secondary);
+        }
+
+        .auth-toggle {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .auth-toggle a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Login Form -->
+            <form id="login-form">
+                <div class="auth-header">
+                    <h1>Welcome Back</h1>
+                    <p>Sign in to your account</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-input" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    Sign In
+                </button>
+
+                <div class="auth-toggle">
+                    <p>Don't have an account? <a href="#" onclick="toggleAuthForm()">Sign up</a></p>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="hidden">
+                <div class="auth-header">
+                    <h1>Create Account</h1>
+                    <p>Join our college management system</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="name" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-input" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" name="confirmPassword" class="form-input" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select name="role" id="role" class="form-select" required onchange="toggleRoleFields()">
+                        <option value="">Select Role</option>
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+
+                <!-- Student specific fields -->
+                <div id="student-fields" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Roll Number</label>
+                        <input type="text" name="rollNumber" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Branch</label>
+                        <select name="branch" class="form-select">
+                            <option value="">Select Branch</option>
+                            <option value="CSE">Computer Science</option>
+                            <option value="ECE">Electronics</option>
+                            <option value="ME">Mechanical</option>
+                            <option value="CE">Civil</option>
+                            <option value="EEE">Electrical</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Year</label>
+                        <select name="year" class="form-select">
+                            <option value="">Select Year</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Class</label>
+                        <select name="classId" id="classId" class="form-select">
+                            <option value="">Select Class</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Teacher specific fields -->
+                <div id="teacher-fields" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Department</label>
+                        <select name="department" class="form-select">
+                            <option value="">Select Department</option>
+                            <option value="CSE">Computer Science</option>
+                            <option value="ECE">Electronics</option>
+                            <option value="ME">Mechanical</option>
+                            <option value="CE">Civil</option>
+                            <option value="EEE">Electrical</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    Create Account
+                </button>
+
+                <div class="auth-toggle">
+                    <p>Already have an account? <a href="#" onclick="toggleAuthForm()">Sign in</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../assets/js/main.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script>
+        function toggleAuthForm() {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            loginForm.classList.toggle('hidden');
+            registerForm.classList.toggle('hidden');
+        }
+    </script>
+</body>
+
+</html>

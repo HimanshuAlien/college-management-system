@@ -1,0 +1,605 @@
+/* Dashboard specific styles */
+.dashboard-header {
+    margin-bottom: 32px;
+}
+
+.dashboard-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.dashboard-greeting {
+    color: var(--text-secondary);
+    font-size: 16px;
+}
+
+/* Dashboard Stats Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 24px;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(30px, -30px);
+}
+
+.stat-card.success {
+    background: linear-gradient(135deg, var(--success), #059669);
+}
+
+.stat-card.warning {
+    background: linear-gradient(135deg, var(--warning), #d97706);
+}
+
+.stat-card.danger {
+    background: linear-gradient(135deg, var(--danger), #dc2626);
+}
+
+.stat-icon {
+    font-size: 24px;
+    margin-bottom: 12px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 32px 0;
+}
+
+.quick-action {
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: var(--card-bg);
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.quick-action:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.quick-action-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    color: var(--primary);
+}
+
+.quick-action-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.quick-action-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Recent Activity */
+.activity-list {
+    list-style: none;
+    padding: 0;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: white;
+}
+
+.activity-icon.success {
+    background: var(--success);
+}
+
+.activity-icon.warning {
+    background: var(--warning);
+}
+
+.activity-icon.info {
+    background: var(--info);
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.activity-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.activity-time {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Attendance specific */
+.attendance-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.student-card {
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s;
+}
+
+.student-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.student-card.present {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.student-card.absent {
+    border-color: var(--danger);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.student-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.student-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border);
+}
+
+.student-details h4 {
+    margin-bottom: 4px;
+    color: var(--text-primary);
+}
+
+.roll-number {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.attendance-status {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.attendance-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-present {
+    background: var(--success);
+    color: white;
+    flex: 1;
+}
+
+.btn-absent {
+    background: var(--danger);
+    color: white;
+    flex: 1;
+}
+
+.btn-present.active,
+.btn-absent.active {
+    opacity: 0.7;
+    transform: scale(0.95);
+}
+
+/* Assignment Cards */
+.assignment-card {
+    border-left: 4px solid var(--primary);
+    margin-bottom: 16px;
+}
+
+.assignment-header {
+    display: flex;
+    justify-content: between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.assignment-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.assignment-subject {
+    font-size: 14px;
+    color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.assignment-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.assignment-description {
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.assignment-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* CGPA Calculator */
+.cgpa-calculator {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.grade-input-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.cgpa-result {
+    background: var(--primary);
+    color: white;
+    padding: 24px;
+    border-radius: 12px;
+    text-align: center;
+    margin-top: 24px;
+}
+
+.cgpa-value {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.cgpa-label {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+/* Messages */
+.chat-container {
+    height: 600px;
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.chat-sidebar {
+    width: 300px;
+    background: var(--card-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-search {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.conversation-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.conversation-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.conversation-item:hover,
+.conversation-item.active {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.conversation-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.conversation-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.conversation-name {
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: var(--text-primary);
+}
+
+.conversation-preview {
+    font-size: 14px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.unread-badge {
+    background: var(--primary);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--light);
+}
+
+.chat-header {
+    padding: 16px 20px;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.message {
+    display: flex;
+    margin-bottom: 16px;
+    max-width: 80%;
+}
+
+.message.sent {
+    margin-left: auto;
+    flex-direction: row-reverse;
+}
+
+.message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin: 0 8px;
+}
+
+.message-content {
+    background: var(--card-bg);
+    padding: 12px 16px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.message.sent .message-content {
+    background: var(--primary);
+    color: white;
+}
+
+.message-text {
+    margin-bottom: 4px;
+}
+
+.message-time {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.chat-input {
+    padding: 16px 20px;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border);
+}
+
+.message-form {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.message-input {
+    flex: 1;
+    min-height: 40px;
+    max-height: 120px;
+    resize: none;
+    border-radius: 20px;
+    padding: 10px 16px;
+}
+
+.send-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .attendance-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .grade-input-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .chat-container {
+        height: 500px;
+        flex-direction: column;
+    }
+
+    .chat-sidebar {
+        width: 100%;
+        height: 200px;
+    }
+
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Normal (light) mode */
+.assignment-item {
+    background: #f8f9fa !important;
+    color: #222 !important;
+}
+
+.assignment-item h4 {
+    color: #333 !important;
+}
+
+.assignment-item p {
+    color: #666 !important;
+}
+
+.assignment-item button {
+    background: #dc3545 !important;
+    color: #fff !important;
+}
+
+.assignment-item button:hover {
+    background: #c82333 !important;
+}
+
+/* Dark mode */
+body.dark-mode .assignment-item {
+    background: #23272a !important;
+    color: #eee !important;
+}
+
+body.dark-mode .assignment-item h4,
+body.dark-mode .assignment-item p {
+    color: #eee !important;
+}
+
+body.dark-mode .assignment-item button {
+    background: #ff7675 !important;
+    color: #23272a !important;
+}
+
+body.dark-mode .assignment-item button:hover {
+    background: #d35400 !important;
+    color: #fff !important;
+}
+
+body.dark-mode .assignment-item {
+    border-bottom: 1px solid #444 !important;
+}
+
+@media (max-width: 480px) {
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .assignment-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .assignment-actions {
+        flex-wrap: wrap;
+    }
+}

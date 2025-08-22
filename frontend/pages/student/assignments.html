@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignments - College MS</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="/" class="logo">College MS</a>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="attendance.html">Attendance</a></li>
+                <li><a href="assignments.html" class="active">Assignments</a></li>
+                <li><a href="cgpa.html">CGPA</a></li>
+                <li><a href="messages.html">Messages</a></li>
+                <li><a href="profile.html">👤 Profile</a></li>
+
+                <li class="keep"><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+                <li class="keep"><button onclick="logout()" class="btn btn-danger">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container main-content">
+        <div class="dashboard-header">
+            <h1>📝 My Assignments</h1>
+            <p>Submit assignments and view your grades</p>
+        </div>
+
+        <!-- Assignment Filters -->
+        <div class="card mb-3">
+            <div class="flex gap-3">
+                <select id="status-filter" class="form-select" style="width: auto;">
+                    <option value="all">All Assignments</option>
+                    <option value="pending">Pending</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="graded">Graded</option>
+                    <option value="overdue">Overdue</option>
+                </select>
+                <button id="refresh-assignments" class="btn btn-secondary">🔄 Refresh</button>
+            </div>
+        </div>
+
+        <!-- Assignments List -->
+        <div id="assignments-container">
+            <div class="loading"></div>
+        </div>
+
+        <!-- Assignment Submission Modal -->
+        <div id="submit-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Submit Assignment</h3>
+                <form id="submission-form">
+                    <div class="form-group">
+                        <label class="form-label">Assignment Content</label>
+                        <textarea name="content" class="form-textarea" rows="4"
+                            placeholder="Enter your assignment content..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Upload Files (Optional)</label>
+                        <input type="file" name="files" class="form-input" multiple accept=".pdf,.doc,.docx,.txt,.zip">
+                        <small class="text-secondary">Max 5 files, 10MB each</small>
+                    </div>
+                    <div class="flex gap-2 justify-end">
+                        <button type="button" onclick="closeSubmitModal()" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit Assignment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../assets/js/main.js"></script>
+    <script>
+        class StudentAssignments {
+            constructor() {
+                this.assignments = [];
+                this.filteredAssignments = [];
+                this.currentFilter = 'all';
+                this.init();
+            }
+
+            init() {
+                this.loadAssignments();
+                this.bindEvents();
+            }
+
+            bindEvents() {
+                const statusFilter = document.getElementById('status-filter');
+                const refreshBtn = document.getElementById('refresh-assignments');
+                const submitForm = document.getElementById('submission-form');
+
+                if (statusFilter) {
+                    statusFilter.addEventListener('change', (e) => {
+                        this.currentFilter = e.target.value;
+                        this.filterAssignments();
+                    });
+                }
+
+                if (refreshBtn) {
+                    refreshBtn.addEventListener('click', () => this.loadAssignments());
+                }
+
+                if (submitForm) {
+                    submitForm.addEventListener('submit', this.handleSubmission.bind(this));
+                }
+            }
+
+            async loadAssignments() {
+                try {
+                    const data = await app.apiCall('/student/assignments');
+                    this.assignments = data.assignments;
+                    this.filterAssignments();
+                } catch (error) {
+                    console.error('Failed to load assignments:', error);
+                }
+            }
+
+            filterAssignments() {
+                if (this.currentFilter === 'all') {
+                    this.filteredAssignments = this.assignments;
+                } else {
+                    this.filteredAssignments = this.assignments.filter(assignment =>
+                        assignment.status === this.currentFilter
+                    );
+                }
+                this.renderAssignments();
+            }
+
+            renderAssignments() {
+                const container = document.getElementById('assignments-container');
+                if (!container) return;
+
+                if (this.filteredAssignments.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-4">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">📝</div>
+                            <h3>No assignments found</h3>
+                            <p class="text-secondary">Check back later for new assignments</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = this.filteredAssignments.map(assignment => {
+                    const statusClass = {
+                        pending: 'warning',
+                        submitted: 'info',
+                        graded: 'success',
+                        overdue: 'danger'
+                    }[assignment.status] || 'secondary';
+
+                    return `
+                        <div class="assignment-card card mb-3">
+                            <div class="assignment-header">
+                                <div>
+                                    <h4 class="assignment-title">${assignment.title}</h4>
+                                    <span class="assignment-subject">${assignment.subject.name}</span>
+                                </div>
+                                <span class="status status-${statusClass}">${assignment.status.toUpperCase()}</span>
+                            </div>
+                            
+                            <div class="assignment-meta">
+                                <span>👨‍🏫 ${assignment.teacher.name}</span>
+                                <span>📅 Due: ${app.formatDate(assignment.dueDate)}</span>
+                                <span>📊 Max Marks: ${assignment.maxMarks}</span>
+                            </div>
+                            
+                            <div class="assignment-description">
+                                ${assignment.description}
+                            </div>
+                            
+                            ${assignment.instructions ? `
+                                <div class="mb-3">
+                                    <strong>Instructions:</strong>
+                                    <p class="text-secondary">${assignment.instructions}</p>
+                                </div>
+                            ` : ''}
+                            
+                            ${assignment.submission ? this.renderSubmissionDetails(assignment.submission) : ''}
+                            
+                            <div class="assignment-actions">
+                                ${assignment.status === 'pending' ? `
+                                    <button onclick="openSubmitModal('${assignment._id}')" class="btn btn-primary">
+                                        📤 Submit Assignment
+                                    </button>
+                                ` : ''}
+                                
+                                ${assignment.status === 'submitted' ? `
+                                    <span class="text-success">✅ Submitted on ${app.formatDate(assignment.submission.submittedAt)}</span>
+                                ` : ''}
+                                
+                                ${assignment.status === 'graded' ? `
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-success">✅ Graded: ${assignment.submission.grade.marks}/${assignment.maxMarks}</span>
+                                        ${assignment.submission.grade.feedback ? `
+                                            <button onclick="showFeedback('${assignment.submission.grade.feedback}')" class="btn btn-sm btn-outline">
+                                                💬 View Feedback
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            renderSubmissionDetails(submission) {
+                return `
+                    <div class="card mt-3" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <h5>Your Submission</h5>
+                        <p><strong>Submitted:</strong> ${app.formatDate(submission.submittedAt)}</p>
+                        ${submission.isLate ? '<span class="status status-warning">Late Submission</span>' : ''}
+                        ${submission.content ? `<p><strong>Content:</strong> ${submission.content}</p>` : ''}
+                        ${submission.files && submission.files.length > 0 ? `
+                            <div>
+                                <strong>Files:</strong>
+                                ${submission.files.map(file => `
+                                    <a href="${file}" target="_blank" class="btn btn-sm btn-outline ml-1">
+                                        📁 View File
+                                    </a>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        ${submission.grade ? `
+                            <div class="mt-2">
+                                <strong>Grade:</strong> ${submission.grade.marks}/${submission.maxMarks || 'N/A'}
+                                ${submission.grade.feedback ? `<br><strong>Feedback:</strong> ${submission.grade.feedback}` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            async handleSubmission(e) {
+                e.preventDefault();
+
+                const formData = new FormData(e.target);
+                const assignmentId = document.getElementById('submit-modal').dataset.assignmentId;
+
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+
+                try {
+                    submitBtn.innerHTML = '<div class="loading"></div> Submitting...';
+                    submitBtn.disabled = true;
+
+                    await app.apiCall(`/student/assignments/${assignmentId}/submit`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    showNotification('Assignment submitted successfully!', 'success');
+                    closeSubmitModal();
+                    this.loadAssignments();
+                } catch (error) {
+                    console.error('Submission failed:', error);
+                } finally {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            }
+        }
+
+        let assignmentManager;
+
+        function openSubmitModal(assignmentId) {
+            const modal = document.getElementById('submit-modal');
+            modal.dataset.assignmentId = assignmentId;
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+        }
+
+        function closeSubmitModal() {
+            const modal = document.getElementById('submit-modal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+            document.getElementById('submission-form').reset();
+        }
+
+        function showFeedback(feedback) {
+            app.showModal('Teacher Feedback', `<p>${feedback}</p>`);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            assignmentManager = new StudentAssignments();
+        });
+    </script>
+</body>
+
+</html>

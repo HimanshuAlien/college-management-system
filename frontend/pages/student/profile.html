@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - College MS</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --accent-color: #7c3aed;
+            --card-background: #f8fafc;
+            --secondary-background: #eef2f7;
+            --input-background: #f3f4f6;
+            --text-primary: #22223b;
+            --text-secondary: #555;
+            --border-color: #e5e7eb;
+            --primary-color-alpha: rgba(79, 70, 229, 0.07);
+            --success-background: #d1fae5;
+            --success-color: #065f46;
+            --success-border: #b7e5ce;
+            --error-background: #fee2e2;
+            --error-color: #991b1b;
+            --error-border: #f5c2c7;
+            --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.10);
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #6366f1;
+            --accent-color: #8b5cf6;
+            --card-background: #22223b;
+            --secondary-background: #27293d;
+            --input-background: #181828;
+            --text-primary: #f3f4f6;
+            --text-secondary: #a5b4fc;
+            --border-color: #2c3147;
+            --primary-color-alpha: rgba(99, 102, 241, 0.12);
+            --success-background: #065f46;
+            --success-color: #d1fae5;
+            --success-border: #065f46;
+            --error-background: #991b1b;
+            --error-color: #fee2e2;
+            --error-border: #991b1b;
+            --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.19);
+        }
+
+        .profile-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            background: var(--card-background);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .profile-avatar-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .current-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            object-fit: cover;
+            background: var(--secondary-background);
+            display: block;
+        }
+
+        .avatar-placeholder {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .profile-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .profile-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+
+        .profile-form-container {
+            padding: 2rem;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            background: var(--input-background);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px var(--primary-color-alpha);
+            background: var(--card-background);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: var(--secondary-background);
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-wrapper:hover .file-input-button {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: var(--primary-color-alpha);
+        }
+
+        .selected-file {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: var(--success-background);
+            color: var(--success-color);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .update-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .update-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--primary-color-alpha);
+        }
+
+        .update-btn:active {
+            transform: translateY(0);
+        }
+
+        .update-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .success-message,
+        .error-message {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        .success-message {
+            background: var(--success-background);
+            color: var(--success-color);
+            border: 1px solid var(--success-border);
+        }
+
+        .error-message {
+            background: var(--error-background);
+            color: var(--error-color);
+            border: 1px solid var(--error-border);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Dark mode specific styles */
+        [data-theme="dark"] .profile-header {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+
+        [data-theme="dark"] .current-avatar,
+        [data-theme="dark"] .avatar-placeholder {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .profile-container {
+                margin: 1rem;
+                border-radius: 16px;
+            }
+
+            .profile-header {
+                padding: 1.5rem;
+            }
+
+            .profile-form-container {
+                padding: 1.5rem;
+            }
+
+            .current-avatar,
+            .avatar-placeholder {
+                width: 100px;
+                height: 100px;
+            }
+
+            .profile-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="/" class="logo">College MS</a>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="attendance.html">Attendance</a></li>
+                <li><a href="assignments.html">Assignments</a></li>
+                <li><a href="cgpa.html">CGPA</a></li>
+                <li><a href="messages.html">Messages</a></li>
+                <li><a href="profile.html" class="active">👤 Profile</a></li>
+                <li class="keep"><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+                <li class="keep"><button onclick="logout()" class="btn btn-danger">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container main-content">
+        <div class="dashboard-header">
+            <h1>👤 My Profile</h1>
+            <p>Manage your profile information and settings</p>
+        </div>
+
+        <div class="profile-container">
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <h1 class="profile-title" id="profile-name">Loading...</h1>
+                <p class="profile-subtitle" id="profile-role">Please wait...</p>
+            </div>
+
+            <!-- Profile Form -->
+            <div class="profile-form-container">
+                <!-- Success/Error Messages -->
+                <div id="success-message" class="success-message">
+                    <span>✅</span>
+                    <span id="success-text">Profile updated successfully!</span>
+                </div>
+                <div id="error-message" class="error-message">
+                    <span>❌</span>
+                    <span id="error-text">Something went wrong!</span>
+                </div>
+
+                <form id="profile-form" enctype="multipart/form-data">
+                    <!-- Profile Picture Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <span>📸</span>
+                            Profile Picture
+                        </h3>
+
+                        <div class="profile-avatar-section">
+                            <img id="current-avatar" src="/assets/img/default-avatar.png" alt="Current Profile"
+                                class="current-avatar" style="display: none;">
+                            <div id="avatar-placeholder" class="avatar-placeholder">👤</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Upload New Picture</label>
+                            <div class="file-input-wrapper">
+                                <input type="file" id="profilePic" accept="image/*" class="file-input">
+                                <div class="file-input-button">
+                                    <span>📁</span>
+                                    <span>Choose Image File</span>
+                                </div>
+                            </div>
+                            <div id="selected-file" class="selected-file"></div>
+                        </div>
+                    </div>
+
+                    <!-- Personal Information Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <span>ℹ️</span>
+                            Personal Information
+                        </h3>
+
+                        <div class="form-group">
+                            <label class="form-label" for="name">Full Name</label>
+                            <input type="text" id="name" class="form-input" placeholder="Enter your full name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="email">Email Address</label>
+                            <input type="email" id="email" class="form-input" placeholder="Enter your email address"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="phone">Phone Number</label>
+                            <input type="tel" id="phone" class="form-input" placeholder="Enter your phone number">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="update-btn" id="update-btn">
+                        <span>💾</span>
+                        <span>Update Profile</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../assets/js/main.js"></script>
+    <script>
+        // Load current profile data
+        async function loadProfile() {
+            try {
+                const res = await fetch('/api/student/profile', {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+                });
+                const data = await res.json();
+
+                if (data.user) {
+                    // Update profile info
+                    document.getElementById('profile-name').textContent = data.user.name || 'Unknown User';
+                    document.getElementById('profile-role').textContent = `${data.user.role?.toUpperCase() || 'USER'} • College Management System`;
+
+                    // Update form fields
+                    document.getElementById('name').value = data.user.name || '';
+                    document.getElementById('email').value = data.user.email || '';
+                    document.getElementById('phone').value = data.user.phone || '';
+
+                    // Update profile picture
+                    if (data.user.profileImage) {
+                        document.getElementById('current-avatar').src = data.user.profileImage;
+                        document.getElementById('current-avatar').style.display = 'block';
+                        document.getElementById('avatar-placeholder').style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                showError('Failed to load profile data');
+            }
+        }
+
+        // Handle file selection
+        document.getElementById('profilePic').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            const selectedFileDiv = document.getElementById('selected-file');
+
+            if (file) {
+                selectedFileDiv.textContent = `Selected: ${file.name}`;
+                selectedFileDiv.style.display = 'block';
+
+                // Preview the image
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('current-avatar').src = e.target.result;
+                    document.getElementById('current-avatar').style.display = 'block';
+                    document.getElementById('avatar-placeholder').style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                selectedFileDiv.style.display = 'none';
+            }
+        });
+
+        // Handle profile update
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const updateBtn = document.getElementById('update-btn');
+            const originalContent = updateBtn.innerHTML;
+            updateBtn.innerHTML = '<span>⏳</span><span>Updating...</span>';
+            updateBtn.disabled = true;
+
+            const profilePic = document.getElementById('profilePic').files[0];
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+
+            try {
+                // First update text fields
+                const textRes = await fetch('/api/student/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email, phone })
+                });
+
+                const textResult = await textRes.json();
+
+                if (!textResult.success) {
+                    throw new Error(textResult.message);
+                }
+
+                // Update profile name in header
+                document.getElementById('profile-name').textContent = name;
+
+                // If profile picture selected, upload it
+                if (profilePic) {
+                    const formData = new FormData();
+                    formData.append('profilePic', profilePic);
+
+                    const picRes = await fetch('/api/student/profile/picture', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') },
+                        body: formData
+                    });
+
+                    const picResult = await picRes.json();
+
+                    if (!picResult.success) {
+                        throw new Error(picResult.message);
+                    }
+
+                    showSuccess('Profile and picture updated successfully!');
+                } else {
+                    showSuccess('Profile updated successfully!');
+                }
+
+                // Clear file selection
+                document.getElementById('profilePic').value = '';
+                document.getElementById('selected-file').style.display = 'none';
+
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showError(error.message || 'Failed to update profile');
+            } finally {
+                updateBtn.innerHTML = originalContent;
+                updateBtn.disabled = false;
+            }
+        });
+
+        // Utility functions
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success-message');
+            document.getElementById('success-text').textContent = message;
+            successDiv.style.display = 'flex';
+            setTimeout(() => successDiv.style.display = 'none', 4000);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            document.getElementById('error-text').textContent = message;
+            errorDiv.style.display = 'flex';
+            setTimeout(() => errorDiv.style.display = 'none', 4000);
+        }
+
+        // Load profile when page loads
+        window.addEventListener('DOMContentLoaded', loadProfile);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - College MS</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="/" class="logo">College MS</a>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html" class="active">Dashboard</a></li>
+                <li><a href="attendance.html">Attendance</a></li>
+                <li><a href="assignments.html">Assignments</a></li>
+                <li><a href="cgpa.html">CGPA</a></li>
+                <li><a href="messages.html">Messages</a></li>
+                <li><a href="profile.html">👤 Profile</a></li>
+                <li class="keep"><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+                <li class="keep"><button onclick="logout()" class="btn btn-danger">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+
+    <main class="container main-content">
+        <div class="dashboard-header">
+            <h1>📋 My Profile</h1>
+            <p>Update your profile information</p>
+        </div>
+
+        <div class="card" style="max-width: 500px; margin: auto;">
+            <form id="profile-form" enctype="multipart/form-data">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Profile Picture:</label>
+                    <input type="file" id="profilePic" accept="image/*" style="width: 100%; padding: 8px;">
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Name:</label>
+                    <input type="text" id="name" required style="width: 100%; padding: 8px; border: 1px solid #ddd;">
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Email:</label>
+                    <input type="email" id="email" required style="width: 100%; padding: 8px; border: 1px solid #ddd;">
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Phone:</label>
+                    <input type="text" id="phone" style="width: 100%; padding: 8px; border: 1px solid #ddd;">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">💾 Update Profile</button>
+            </form>
+        </div>
+    </main>
+
+    <script src="../../assets/js/main.js"></script>
+    <script>
+        // Load current profile data
+        async function loadProfile() {
+            try {
+                const res = await fetch('/api/admin/profile', {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+                });
+                const data = await res.json();
+
+                if (data.user) {
+                    document.getElementById('name').value = data.user.name || '';
+                    document.getElementById('email').value = data.user.email || '';
+                    document.getElementById('phone').value = data.user.phone || '';
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+
+        // Handle profile update
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const profilePic = document.getElementById('profilePic').files[0];
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+
+            // First update text fields
+            try {
+                const textRes = await fetch('/api/admin/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email, phone })
+                });
+
+                const textResult = await textRes.json();
+
+                // If profile picture selected, upload it
+                if (profilePic) {
+                    const formData = new FormData();
+                    formData.append('profilePic', profilePic);
+
+                    const picRes = await fetch('/api/admin/profile/picture', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') },
+                        body: formData
+                    });
+
+                    const picResult = await picRes.json();
+                    alert('Profile and picture updated successfully!');
+                } else {
+                    alert('Profile updated successfully!');
+                }
+
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                alert('Error updating profile');
+            }
+        });
+
+        // Load profile when page loads
+        window.onload = loadProfile;
+    </script>
+</body>
+
+</html>

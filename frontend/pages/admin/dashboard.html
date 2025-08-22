@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - College MS</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="/" class="logo">College Alien</a>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html" class="active">Dashboard</a></li>
+                <li><a href="users.html">Users</a></li>
+                <li><a href="classes.html">Classes</a></li>
+                <li><a href="announcements.html">Announcements</a></li>
+                <li><a href="messages.html">Messages</a></li>
+                <li class="keep"><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+                <li class="keep"><button onclick="logout()" class="btn btn-danger">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container main-content">
+        <div class="dashboard-header">
+            <h1>Welcome, <span id="user-name">Admin</span>!</h1>
+            <p class="dashboard-greeting">System overview and management</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value" id="total-students">0</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+
+            <div class="stat-card success">
+                <div class="stat-icon">👨‍🏫</div>
+                <div class="stat-value" id="total-teachers">0</div>
+                <div class="stat-label">Total Teachers</div>
+            </div>
+
+            <div class="stat-card warning">
+                <div class="stat-icon">🏛️</div>
+                <div class="stat-value" id="total-classes">0</div>
+                <div class="stat-label">Total Classes</div>
+            </div>
+
+            <div class="stat-card danger">
+                <div class="stat-icon">📚</div>
+                <div class="stat-value" id="total-subjects">0</div>
+                <div class="stat-label">Total Subjects</div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <a href="users.html" class="quick-action">
+                <div class="quick-action-icon">👤</div>
+                <div class="quick-action-title">Manage Users</div>
+                <div class="quick-action-desc">Add, edit, or remove users</div>
+            </a>
+
+            <a href="classes.html" class="quick-action">
+                <div class="quick-action-icon">🏫</div>
+                <div class="quick-action-title">Manage Classes</div>
+                <div class="quick-action-desc">Create and manage classes</div>
+            </a>
+
+            <a href="#" onclick="createUser()" class="quick-action">
+                <div class="quick-action-icon">➕</div>
+                <div class="quick-action-title">Add User</div>
+                <div class="quick-action-desc">Register new users</div>
+            </a>
+
+            <!-- ✅ ADDED MESSAGES QUICK ACTION -->
+            <a href="messages.html" class="quick-action">
+                <div class="quick-action-icon">💬</div>
+                <div class="quick-action-title">Messages</div>
+                <div class="quick-action-desc">Communicate with users</div>
+            </a>
+
+            <a href="announcements.html" class="quick-action">
+                <div class="quick-action-icon">📢</div>
+                <div class="quick-action-title">Announcements</div>
+                <div class="quick-action-desc">Post system updates</div>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-2">
+            <!-- Recent Users -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent Registrations</h3>
+                    <p class="card-subtitle">Latest users added to system</p>
+                </div>
+                <div id="recent-users">
+                    <div class="loading"></div>
+                </div>
+            </div>
+
+            <!-- Class Statistics -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Class Statistics</h3>
+                    <p class="card-subtitle">Student distribution by class</p>
+                </div>
+                <div id="class-stats">
+                    <div class="loading"></div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- System Reports -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">System Reports</h3>
+                <div class="flex gap-2">
+                    <button onclick="generateAttendanceReport()" class="btn btn-primary btn-sm">📊 Attendance
+                        Report</button>
+                    <button onclick="generateGradeReport()" class="btn btn-secondary btn-sm">📈 Grade Report</button>
+                    <button onclick="exportSystemData()" class="btn btn-outline btn-sm">💾 Export Data</button>
+                </div>
+            </div>
+            <div id="system-reports">
+                <p class="text-secondary">Select a report to generate system analytics</p>
+            </div>
+        </div>
+
+        <!-- Create User Modal -->
+        <div id="user-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Create New User</h3>
+                <form id="user-form">
+                    <div class="grid grid-cols-2">
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="name" class="form-input" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-input" required>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2">
+                        <div class="form-group">
+                            <label class="form-label">Role</label>
+                            <select name="role" id="user-role" class="form-select" required
+                                onchange="toggleUserRoleFields()">
+                                <option value="">Select Role</option>
+                                <option value="student">Student</option>
+                                <option value="teacher">Teacher</option>
+                                <option value="admin">Admin</option>
+                            </select>
+
+
+
+                            <div class="form-group">
+                                <label class="form-label">Password</label>
+                                <input type="password" name="password" class="form-input" required minlength="6">
+                            </div>
+                        </div>
+
+                        <!-- Student Fields -->
+                        <div id="student-fields" style="display: none;">
+                            <div class="grid grid-cols-3">
+                                <div class="form-group">
+                                    <label class="form-label">Roll Number</label>
+                                    <input type="text" name="rollNumber" class="form-input">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Branch</label>
+                                    <select name="branch" class="form-select">
+                                        <option value="">Select Branch</option>
+                                        <option value="CSE">Computer Science</option>
+                                        <option value="ECE">Electronics</option>
+                                        <option value="ME">Mechanical</option>
+                                        <option value="CE">Civil</option>
+                                        <option value="EEE">Electrical</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Year</label>
+                                    <select name="year" class="form-select">
+                                        <option value="">Select Year</option>
+                                        <option value="1">1st Year</option>
+                                        <option value="2">2nd Year</option>
+                                        <option value="3">3rd Year</option>
+                                        <option value="4">4th Year</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Class</label>
+                                <select name="classId" id="user-class" class="form-select">
+                                    <option value="">Select Class</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Teacher Fields -->
+                        <div id="teacher-fields" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Department</label>
+                                <select name="department" class="form-select">
+                                    <option value="">Select Department</option>
+                                    <option value="CSE">Computer Science</option>
+                                    <option value="ECE">Electronics</option>
+                                    <option value="ME">Mechanical</option>
+                                    <option value="CE">Civil</option>
+                                    <option value="EEE">Electrical</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2 justify-end">
+                            <button type="button" onclick="closeUserModal()" class="btn btn-secondary">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create User</button>
+                        </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Report Modal -->
+        <div id="report-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 1000px;">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="report-title">System Report</h3>
+                    <button onclick="closeReportModal()" class="btn btn-secondary">×</button>
+                </div>
+                <div id="report-content">
+                    <div class="loading"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../assets/js/main.js"></script>
+    <script src="../../assets/js/dashboard.js"></script>
+    <script>
+        function createUser() {
+            document.getElementById('user-modal').style.display = 'flex';
+            loadClassesForUser();
+        }
+
+        function closeUserModal() {
+            document.getElementById('user-modal').style.display = 'none';
+            document.getElementById('user-form').reset();
+            document.getElementById('student-fields').style.display = 'none';
+            document.getElementById('teacher-fields').style.display = 'none';
+        }
+
+        function toggleUserRoleFields() {
+            const role = document.getElementById('user-role').value;
+            const studentFields = document.getElementById('student-fields');
+            const teacherFields = document.getElementById('teacher-fields');
+
+            studentFields.style.display = role === 'student' ? 'block' : 'none';
+            teacherFields.style.display = role === 'teacher' ? 'block' : 'none';
+        }
+
+        async function loadClassesForUser() {
+            try {
+                const data = await app.apiCall('/admin/classes');
+                const select = document.getElementById('user-class');
+                select.innerHTML = '<option value="">Select Class</option>';
+
+                data.classes.forEach(cls => {
+                    select.innerHTML += `
+                        <option value="${cls._id}">
+                            ${cls.name} - ${cls.branch} Year ${cls.year}
+                        </option>
+                    `;
+                });
+            } catch (error) {
+                console.error('Failed to load classes:', error);
+            }
+        }
+
+        async function generateAttendanceReport() {
+            const modal = document.getElementById('report-modal');
+            const title = document.getElementById('report-title');
+            const content = document.getElementById('report-content');
+
+            title.textContent = 'System Attendance Report';
+            modal.style.display = 'flex';
+            content.innerHTML = '<div class="loading"></div>';
+
+            try {
+                const data = await app.apiCall('/admin/reports/attendance');
+
+                content.innerHTML = `
+                    <div class="mb-4">
+                        <h4>Overall Attendance Statistics</h4>
+                        <p class="text-secondary">System-wide attendance analysis</p>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Roll Number</th>
+                                    <th>Total Classes</th>
+                                    <th>Present</th>
+                                    <th>Attendance %</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.attendanceReport.map(student => {
+                    const statusClass = student.attendancePercentage >= 75 ? 'success' :
+                        student.attendancePercentage >= 65 ? 'warning' : 'danger';
+                    return `
+                                        <tr>
+                                            <td>${student.studentName}</td>
+                                            <td>${student.rollNumber}</td>
+                                            <td>${student.totalClasses}</td>
+                                            <td>${student.presentClasses}</td>
+                                            <td class="text-${statusClass}">${student.attendancePercentage}%</td>
+                                            <td>
+                                                <span class="status status-${statusClass}">
+                                                    ${student.attendancePercentage >= 75 ? 'Good' :
+                            student.attendancePercentage >= 65 ? 'Average' : 'Poor'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `;
+                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (error) {
+                content.innerHTML = '<p class="text-danger">Failed to generate attendance report</p>';
+            }
+        }
+
+        async function generateGradeReport() {
+            showNotification('Grade report feature coming soon!', 'info');
+        }
+
+        async function exportSystemData() {
+            showNotification('Data export feature coming soon!', 'info');
+        }
+
+        function closeReportModal() {
+            document.getElementById('report-modal').style.display = 'none';
+        }
+
+        // User creation form handler
+        document.getElementById('user-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const userData = Object.fromEntries(formData.entries());
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            try {
+                submitBtn.innerHTML = '<div class="loading"></div> Creating...';
+                submitBtn.disabled = true;
+
+                await app.apiCall('/admin/users', {
+                    method: 'POST',
+                    body: JSON.stringify(userData)
+                });
+
+                showNotification('User created successfully!', 'success');
+                closeUserModal();
+
+                // Refresh dashboard
+                if (window.dashboardManager) {
+                    window.dashboardManager.loadDashboardData();
+                }
+            } catch (error) {
+                console.error('Failed to create user:', error);
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

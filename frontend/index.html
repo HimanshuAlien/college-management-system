@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Management System</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .hero {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .hero-content h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .features {
+            padding: 4rem 0;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="/" class="logo">College MS</a>
+            <ul class="nav-menu">
+                <li><a href="/pages/login.html" class="btn btn-primary">Login</a></li>
+                <li><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>College Management System</h1>
+                <p>Streamline your educational institution with our comprehensive management platform</p>
+                <a href="/pages/login.html" class="btn btn-lg" style="background: white; color: #667eea;">Get
+                    Started</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2 class="text-center mb-4" style="font-size: 2.5rem;">Features</h2>
+            <div class="grid grid-cols-3">
+                <div class="feature-card">
+                    <div class="feature-icon">👨‍🎓</div>
+                    <h3>Student Portal</h3>
+                    <p>Track attendance, submit assignments, calculate CGPA, and communicate with teachers</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👩‍🏫</div>
+                    <h3>Teacher Dashboard</h3>
+                    <p>Mark attendance, grade assignments, manage classes, and interact with students</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👨‍💼</div>
+                    <h3>Admin Control</h3>
+                    <p>Manage users, classes, subjects, and system-wide announcements</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="assets/js/main.js"></script>
+</body>
+
+</html>

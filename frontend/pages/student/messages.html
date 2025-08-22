@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages - College MS</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="/" class="logo">College MS</a>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="attendance.html">Attendance</a></li>
+                <li><a href="assignments.html">Assignments</a></li>
+                <li><a href="cgpa.html">CGPA</a></li>
+                <li><a href="messages.html" class="active">Messages</a></li>
+                <li><a href="profile.html">👤 Profile</a></li>
+
+                <li class="keep"><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+                <li class="keep"><button onclick="logout()" class="btn btn-danger">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container main-content">
+        <div class="dashboard-header">
+            <h1>💬 Messages</h1>
+            <p>Chat with your teachers and classmates</p>
+        </div>
+
+        <div class="chat-container">
+            <!-- Chat Sidebar -->
+            <div class="chat-sidebar">
+                <div class="chat-search">
+                    <input type="text" placeholder="Search conversations..." class="form-input"
+                        id="search-conversations">
+                </div>
+                <div class="conversation-list" id="conversations-list">
+                    <div class="loading"></div>
+                </div>
+            </div>
+
+            <!-- Chat Main -->
+            <div class="chat-main">
+                <div class="chat-header" id="chat-header">
+                    <span class="text-secondary">Select a conversation to start chatting</span>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="text-center text-secondary py-4">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">💬</div>
+                        <h3>Start a conversation</h3>
+                        <p>Select someone from your conversations to start chatting</p>
+                    </div>
+                </div>
+                <div class="chat-input" id="chat-input" style="display: none;">
+                    <form class="message-form" id="message-form">
+                        <textarea class="message-input" id="message-input" placeholder="Type a message..."
+                            rows="1"></textarea>
+                        <button type="submit" class="send-button btn btn-primary">📤</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../assets/js/main.js"></script>
+    <script>
+        class MessagingSystem {
+            constructor() {
+                this.conversations = {};
+                this.currentChat = null;
+                this.currentMessages = [];
+                this.init();
+            }
+
+            init() {
+                this.loadConversations();
+                this.bindEvents();
+                this.startPolling();
+            }
+
+            bindEvents() {
+                const messageForm = document.getElementById('message-form');
+                const messageInput = document.getElementById('message-input');
+                const searchInput = document.getElementById('search-conversations');
+
+                if (messageForm) {
+                    messageForm.addEventListener('submit', this.sendMessage.bind(this));
+                }
+
+                if (messageInput) {
+                    messageInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            messageForm.dispatchEvent(new Event('submit'));
+                        }
+                    });
+                }
+
+                if (searchInput) {
+                    searchInput.addEventListener('input', this.filterConversations.bind(this));
+                }
+            }
+
+            async loadConversations() {
+                try {
+                    const data = await app.apiCall('/student/messages');
+                    this.conversations = data.conversations.reduce((acc, conv) => {
+                        acc[conv.partner._id] = conv;
+                        return acc;
+                    }, {});
+                    this.renderConversations();
+                } catch (error) {
+                    console.error('Failed to load conversations:', error);
+                }
+            }
+
+            renderConversations() {
+                const container = document.getElementById('conversations-list');
+                if (!container) return;
+
+                const conversationList = Object.values(this.conversations);
+
+                if (conversationList.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-secondary p-4">
+                            <div style="font-size: 2rem; margin-bottom: 1rem;">📭</div>
+                            <p>No conversations yet</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = conversationList.map(conv => `
+                    <div class="conversation-item ${this.currentChat === conv.partner._id ? 'active' : ''}" 
+                         onclick="selectConversation('${conv.partner._id}')">
+                        <img src="${conv.partner.profileImage}" alt="${conv.partner.name}" class="conversation-avatar">
+                        <div class="conversation-info">
+                            <div class="conversation-name">
+                                ${conv.partner.name}
+                                <span class="text-xs text-secondary">(${conv.partner.role})</span>
+                            </div>
+                            <div class="conversation-preview">
+                                ${conv.lastMessage.content.substring(0, 30)}${conv.lastMessage.content.length > 30 ? '...' : ''}
+                            </div>
+                        </div>
+                        ${conv.unreadCount > 0 ? `<span class="unread-badge">${conv.unreadCount}</span>` : ''}
+                    </div>
+                `).join('');
+            }
+
+            selectConversation(partnerId) {
+                this.currentChat = partnerId;
+                const conversation = this.conversations[partnerId];
+
+                if (!conversation) return;
+
+                // Update active conversation in sidebar
+                document.querySelectorAll('.conversation-item').forEach(item => item.classList.remove('active'));
+                event.target.closest('.conversation-item').classList.add('active');
+
+                // Update chat header
+                const chatHeader = document.getElementById('chat-header');
+                if (chatHeader) {
+                    chatHeader.innerHTML = `
+                        <img src="${conversation.partner.profileImage}" alt="${conversation.partner.name}" class="avatar">
+                        <div>
+                            <h4>${conversation.partner.name}</h4>
+                            <p class="text-secondary">${conversation.partner.role}</p>
+                        </div>
+                    `;
+                }
+
+                // Show chat input
+                document.getElementById('chat-input').style.display = 'block';
+
+                // Load messages
+                this.loadMessages(partnerId);
+            }
+
+            loadMessages(partnerId) {
+                const conversation = this.conversations[partnerId];
+                if (!conversation) return;
+
+                this.currentMessages = conversation.messages;
+                this.renderMessages();
+
+                // Mark messages as read
+                this.markAsRead(partnerId);
+            }
+
+            renderMessages() {
+                const container = document.getElementById('chat-messages');
+                if (!container) return;
+
+                if (this.currentMessages.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-secondary py-4">
+                            <div style="font-size: 2rem; margin-bottom: 1rem;">👋</div>
+                            <p>No messages yet. Start the conversation!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = this.currentMessages.map(message => {
+                    const isSent = message.sender._id === app.user._id;
+                    return `
+                        <div class="message ${isSent ? 'sent' : 'received'}">
+                            <img src="${message.sender.profileImage}" alt="${message.sender.name}" class="message-avatar">
+                            <div class="message-content">
+                                <div class="message-text">${message.content}</div>
+                                <div class="message-time">${app.formatTime(message.createdAt)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Scroll to bottom
+                container.scrollTop = container.scrollHeight;
+            }
+
+            async sendMessage(e) {
+                e.preventDefault();
+
+                const messageInput = document.getElementById('message-input');
+                const content = messageInput.value.trim();
+
+                if (!content || !this.currentChat) return;
+
+                const sendButton = document.querySelector('.send-button');
+                const originalText = sendButton.innerHTML;
+
+                try {
+                    sendButton.innerHTML = '⏳';
+                    sendButton.disabled = true;
+
+                    await app.apiCall('/student/messages', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            receiverId: this.currentChat,
+                            content: content
+                        })
+                    });
+
+                    messageInput.value = '';
+
+                    // Reload conversations to get updated messages
+                    await this.loadConversations();
+                    this.loadMessages(this.currentChat);
+
+                } catch (error) {
+                    console.error('Failed to send message:', error);
+                } finally {
+                    sendButton.innerHTML = originalText;
+                    sendButton.disabled = false;
+                }
+            }
+
+            async markAsRead(partnerId) {
+                // Implementation for marking messages as read
+                // This would typically be an API call
+            }
+
+            filterConversations() {
+                const searchTerm = document.getElementById('search-conversations').value.toLowerCase();
+                const conversationItems = document.querySelectorAll('.conversation-item');
+
+                conversationItems.forEach(item => {
+                    const name = item.querySelector('.conversation-name').textContent.toLowerCase();
+                    if (name.includes(searchTerm)) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+
+            startPolling() {
+                // Poll for new messages every 30 seconds
+                setInterval(() => {
+                    if (this.currentChat) {
+                        this.loadConversations();
+                    }
+                }, 30000);
+            }
+        }
+
+        // ✅ NEW USER SEARCH FUNCTIONALITY (Student Version)
+        document.addEventListener('DOMContentLoaded', () => {
+            // Use the existing class
+            studentMessaging = new TeacherMessaging();
+
+            console.log('🔍 Page loaded, setting up student search...');
+
+            const searchInput = document.getElementById('search-input');
+            console.log('Search input found:', searchInput);
+
+            if (searchInput) {
+                searchInput.addEventListener('input', async (event) => {
+                    const query = event.target.value;
+                    console.log('🔍 Student search triggered for:', query);
+
+                    if (query.length < 2) {
+                        document.getElementById('search-results').innerHTML = '';
+                        return;
+                    }
+
+                    try {
+                        console.log('📡 Making API call (student)...');
+
+                        const response = await fetch(`/api/student/search-users?query=${encodeURIComponent(query)}`, {
+                            headers: {
+                                'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        console.log('📡 Response status:', response.status);
+                        const data = await response.json();
+                        console.log('📡 Response data:', data);
+
+                        const container = document.getElementById('search-results');
+
+                        if (data.users && data.users.length > 0) {
+                            container.innerHTML = data.users.map(user => `
+                       <div style="padding: 8px; background: white; margin: 2px 0; cursor: pointer; border: 1px solid #ddd; border-radius: 3px; font-size: 13px;" 
+     onclick="startNewConversation('${user._id}', '${user.name}')">
+    <strong style="color: #1e40af;">${user.name}</strong><br>
+    <small style="color: #3b82f6;">${user.role} - ${user.email}</small>
+</div>
+
+                    `).join('');
+                        } else {
+                            container.innerHTML = '<div style="padding: 8px; color: #666; font-size: 13px;">No users found</div>';
+                        }
+
+                    } catch (error) {
+                        console.error('❌ Student search error:', error);
+                        document.getElementById('search-results').innerHTML = '<div style="color: red; padding: 8px; font-size: 13px;">Error: ' + error.message + '</div>';
+                    }
+                });
+            } else {
+                console.error('❌ Student search input not found!');
+            }
+        });
+
+        let messagingSystem;
+
+        function selectConversation(partnerId) {
+            messagingSystem.selectConversation(partnerId);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            messagingSystem = new MessagingSystem();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Announcements - College MS</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="/" class="logo">College MS</a>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="users.html">Users</a></li>
+                <li><a href="classes.html">Classes</a></li>
+                <li><a href="announcements.html" class="active">Announcements</a></li>
+                <li><a href="messages.html">Messages</a></li>
+                <li class="keep"><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+                <li class="keep"><button onclick="logout()" class="btn btn-danger">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container main-content">
+        <div class="dashboard-header">
+            <h1>📢 Manage Announcements</h1>
+            <p>Create and manage college announcements</p>
+        </div>
+
+        <!-- Create New Announcement -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="card-header">
+                <h3 class="card-title">Create New Announcement</h3>
+                <p class="card-subtitle">Share important updates with students and teachers</p>
+            </div>
+            <form id="announcement-form" style="padding: 20px;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Title:</label>
+                    <input type="text" id="announcement-title" placeholder="Enter announcement title..."
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" required>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Content:</label>
+                    <textarea id="announcement-content" placeholder="Enter announcement details..."
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 100px;"
+                        required></textarea>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Priority:</label>
+                    <select id="announcement-priority"
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="normal">Normal</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary">📝 Save as Draft</button>
+                    <button type="button" id="publish-btn" class="btn btn-success">🚀 Publish Now</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Existing Announcements -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">All Announcements</h3>
+                <p class="card-subtitle">Manage existing announcements</p>
+            </div>
+            <div id="announcements-list" style="max-height: 500px; overflow-y: auto;">
+                <div class="loading">Loading announcements...</div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../assets/js/main.js"></script>
+    <script>
+        // Load existing announcements
+        async function loadAnnouncements() {
+            try {
+                const response = await fetch('/api/admin/announcements', {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+                });
+
+                const data = await response.json();
+                const container = document.getElementById('announcements-list');
+
+                if (data.announcements && data.announcements.length > 0) {
+                    container.innerHTML = data.announcements.map(ann => `
+                        <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1;">
+                                <h5 style="margin: 0 0 5px 0; color: #333;">${ann.title}</h5>
+                                <p style="margin: 0 0 5px 0; color: #666; font-size: 14px;">${ann.content.substring(0, 100)}...</p>
+                                <small style="color: #999;">
+                                    Status: <span style="color: ${ann.status === 'published' ? 'green' : ann.status === 'draft' ? 'orange' : 'red'}; font-weight: bold;">${ann.status}</span> | 
+                                    ${new Date(ann.createdAt).toLocaleDateString()}
+                                </small>
+                            </div>
+                            <div style="display: flex; gap: 5px; flex-direction: column;">
+                                ${ann.status === 'draft' ?
+                            `<button onclick="publishAnnouncement('${ann._id}')" class="btn btn-success btn-sm">🚀 Publish</button>` :
+                            ann.status === 'published' ?
+                                `<button onclick="deactivateAnnouncement('${ann._id}')" class="btn btn-warning btn-sm">⏸️ Deactivate</button>` :
+                                `<button onclick="publishAnnouncement('${ann._id}')" class="btn btn-success btn-sm">🚀 Reactivate</button>`
+                        }
+                                <button onclick="deleteAnnouncement('${ann._id}')" class="btn btn-danger btn-sm">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <div style="font-size: 3rem; margin-bottom: 10px;">📭</div>
+                            <p>No announcements created yet</p>
+                            <small>Create your first announcement above</small>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+                document.getElementById('announcements-list').innerHTML = `
+                    <div style="color: red; padding: 20px; text-align: center;">
+                        <p>Failed to load announcements</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Create announcement (draft)
+        document.getElementById('announcement-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await createAnnouncement('draft');
+        });
+
+        // Publish immediately
+        document.getElementById('publish-btn').addEventListener('click', async () => {
+            await createAnnouncement('published');
+        });
+
+        async function createAnnouncement(status) {
+            const title = document.getElementById('announcement-title').value;
+            const content = document.getElementById('announcement-content').value;
+            const priority = document.getElementById('announcement-priority').value;
+
+            if (!title || !content) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/announcements', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title,
+                        content,
+                        priority,
+                        status
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`Announcement ${status === 'published' ? 'published' : 'saved as draft'} successfully!`);
+
+                    // Clear form
+                    document.getElementById('announcement-title').value = '';
+                    document.getElementById('announcement-content').value = '';
+                    document.getElementById('announcement-priority').value = 'normal';
+
+                    // Reload list
+                    loadAnnouncements();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error creating announcement:', error);
+                alert('Failed to create announcement');
+            }
+        }
+
+        // Publish announcement
+        async function publishAnnouncement(id) {
+            try {
+                const response = await fetch(`/api/admin/announcements/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: 'published' })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Announcement published successfully!');
+                    loadAnnouncements();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error publishing announcement:', error);
+                alert('Failed to publish announcement');
+            }
+        }
+
+        // Deactivate announcement
+        async function deactivateAnnouncement(id) {
+            try {
+                const response = await fetch(`/api/admin/announcements/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: 'deactivated' })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Announcement deactivated successfully!');
+                    loadAnnouncements();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error deactivating announcement:', error);
+                alert('Failed to deactivate announcement');
+            }
+        }
+
+        // Delete announcement
+        async function deleteAnnouncement(id) {
+            if (confirm('Are you sure you want to delete this announcement?')) {
+                try {
+                    const response = await fetch(`/api/admin/announcements/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('token')
+                        }
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Announcement deleted successfully!');
+                        loadAnnouncements();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Error deleting announcement:', error);
+                    alert('Failed to delete announcement');
+                }
+            }
+        }
+
+        // Load announcements when page loads
+        document.addEventListener('DOMContentLoaded', loadAnnouncements);
+    </script>
+</body>
+
+</html>

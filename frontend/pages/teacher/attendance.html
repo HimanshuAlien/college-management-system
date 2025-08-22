@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Attendance - College MS</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="/" class="logo">College MS</a>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="attendance.html" class="active">Attendance</a></li>
+                <li><a href="grading.html">Grading</a></li>
+                <li><a href="messages.html">Messages</a></li>
+                <li class="keep"><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+                <li class="keep"><button onclick="logout()" class="btn btn-danger">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container main-content">
+        <div class="dashboard-header">
+            <h1>📊 Mark Attendance</h1>
+            <p>Record student attendance for your subjects</p>
+        </div>
+
+        <!-- Controls -->
+        <div class="card mb-3">
+            <div class="grid grid-cols-3">
+                <div class="form-group">
+                    <label class="form-label">Select Subject</label>
+                    <select id="subject-selector" class="form-select">
+                        <option value="">Choose a subject...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" id="attendance-date" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Actions</label>
+                    <div class="flex gap-2">
+                        <button id="generate-report" class="btn btn-secondary" disabled>📈 Report</button>
+                        <button id="refresh-data" class="btn btn-primary">🔄 Refresh</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div id="bulk-actions" class="card mb-3" style="display: none;">
+            <div class="flex gap-2 items-center">
+                <span class="text-secondary">Quick Actions:</span>
+                <button onclick="markAllPresent()" class="btn btn-success btn-sm">✅ Mark All Present</button>
+                <button onclick="markAllAbsent()" class="btn btn-danger btn-sm">❌ Mark All Absent</button>
+                <span id="attendance-summary" class="text-secondary ml-auto"></span>
+            </div>
+        </div>
+
+        <!-- Students Grid -->
+        <div id="students-container">
+            <div class="text-center py-4">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
+                <h3>Select a subject to mark attendance</h3>
+                <p class="text-secondary">Choose a subject from the dropdown above</p>
+            </div>
+        </div>
+
+        <!-- Report Modal -->
+        <div id="report-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="flex justify-between items-center mb-4">
+                    <h3>Attendance Report</h3>
+                    <button onclick="closeReportModal()" class="btn btn-secondary">×</button>
+                </div>
+                <div id="report-content">
+                    <div class="loading"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../assets/js/main.js"></script>
+    <script>
+        class TeacherAttendance {
+            constructor() {
+                // ✅ Get subjectId from the URL if it exists
+                const urlParams = new URLSearchParams(window.location.search);
+                this.selectedSubject = urlParams.get("subject");
+
+                this.currentDate = new Date().toISOString().split('T')[0];
+                this.students = [];
+                this.attendanceData = {};
+
+                this.init();
+            }
+
+
+            init() {
+                this.loadSubjects();
+                this.bindEvents();
+                this.setTodayDate();
+            }
+
+            bindEvents() {
+                const subjectSelector = document.getElementById('subject-selector');
+                const dateInput = document.getElementById('attendance-date');
+                const refreshBtn = document.getElementById('refresh-data');
+                const reportBtn = document.getElementById('generate-report');
+
+                subjectSelector.addEventListener('change', (e) => {
+                    this.selectedSubject = e.target.value;
+                    if (this.selectedSubject) {
+                        this.loadStudents();
+                        reportBtn.disabled = false;
+                    } else {
+                        this.clearStudents();
+                        reportBtn.disabled = true;
+                    }
+                });
+
+                dateInput.addEventListener('change', (e) => {
+                    this.currentDate = e.target.value;
+                    if (this.selectedSubject) {
+                        this.loadStudents();
+                    }
+                });
+
+                refreshBtn.addEventListener('click', () => {
+                    if (this.selectedSubject) {
+                        this.loadStudents();
+                    }
+                });
+
+                reportBtn.addEventListener('click', () => this.generateReport());
+            }
+
+            setTodayDate() {
+                document.getElementById('attendance-date').value = this.currentDate;
+            }
+
+            async loadSubjects() {
+                try {
+                    const data = await app.apiCall('/teacher/subjects');
+                    const selector = document.getElementById('subject-selector');
+
+                    selector.innerHTML = '<option value="">Choose a subject...</option>';
+                    data.subjects.forEach(subject => {
+                        selector.innerHTML += `
+                <option value="${subject._id}" ${this.selectedSubject === subject._id ? "selected" : ""}>
+                    ${subject.name} - ${subject.class.name} (${subject.class.branch} Year ${subject.class.year})
+                </option>
+            `;
+                    });
+
+                    // ✅ If URL had subjectId, load students automatically
+                    if (this.selectedSubject) {
+                        this.loadStudents();
+                        document.getElementById("generate-report").disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Failed to load subjects:', error);
+                }
+            }
+
+
+            async loadStudents() {
+                try {
+                    console.log("DEBUG selectedSubject:", this.selectedSubject);
+
+                    const [studentsData, attendanceData] = await Promise.all([
+                        app.apiCall(`/teacher/students/${this.selectedSubject}`),
+                        app.apiCall(`/teacher/attendance/${this.selectedSubject}?date=${this.currentDate}`)
+                    ]);
+
+                    // ✅ Safely assign students array
+                    this.students = Array.isArray(studentsData?.students) ? studentsData.students : [];
+
+                    // ✅ Safely assign attendanceData object
+                    this.attendanceData = {};
+                    if (Array.isArray(attendanceData?.attendanceData)) {
+                        attendanceData.attendanceData.forEach(record => {
+                            if (record.student && record.student._id) {
+                                this.attendanceData[record.student._id] = record.status;
+                            }
+                        });
+                    }
+
+                    this.renderStudents();
+                    this.updateSummary();
+
+                } catch (error) {
+                    console.error('Failed to load students:', error);
+                }
+            }
+
+            renderStudents() {
+                const container = document.getElementById('students-container');
+                const bulkActions = document.getElementById('bulk-actions');
+
+                if (this.students.length === 0) {
+                    container.innerHTML = '<p class="text-center text-secondary">No students found for this subject</p>';
+                    bulkActions.style.display = 'none';
+                    return;
+                }
+
+                bulkActions.style.display = 'block';
+
+                container.innerHTML = `
+                    <div class="grid grid-cols-1">
+                        ${this.students.map(student => {
+                    const status = this.attendanceData[student._id] || 'unmarked';
+                    return `
+                                <div class="student-card ${status}" data-student-id="${student._id}">
+                                    <div class="student-info">
+                                        <img src="${student.profileImage}" alt="${student.name}" class="student-avatar">
+                                        <div class="student-details">
+                                            <h4>${student.name}</h4>
+                                            <p class="roll-number">${student.rollNumber}</p>
+                                            <span class="attendance-status status status-${status}">
+                                                ${status === 'unmarked' ? 'Not Marked' : status.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="attendance-actions">
+                                        <button class="btn btn-present ${status === 'present' ? 'active' : ''}" 
+                                                onclick="markAttendance('${student._id}', 'present')">
+                                            ✓ Present
+                                        </button>
+                                        <button class="btn btn-absent ${status === 'absent' ? 'active' : ''}" 
+                                                onclick="markAttendance('${student._id}', 'absent')">
+                                            ✗ Absent
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                }).join('')}
+                    </div>
+                `;
+            }
+
+            async markAttendance(studentId, status) {
+                try {
+                    console.log("DEBUG marking:", { studentId, status, subjectId: this.selectedSubject, date: this.currentDate }); // 👈 add this
+                    await app.apiCall('/teacher/attendance', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            studentId,
+                            status,
+                            subjectId: this.selectedSubject,
+                            date: this.currentDate
+                        })
+                    });
+
+                    // Update local data
+                    this.attendanceData[studentId] = status;
+
+                    // Update UI
+                    const studentCard = document.querySelector(`[data-student-id="${studentId}"]`);
+                    studentCard.className = `student-card ${status}`;
+
+                    const statusSpan = studentCard.querySelector('.attendance-status');
+                    statusSpan.className = `attendance-status status status-${status}`;
+                    statusSpan.textContent = status.toUpperCase();
+
+                    // Update buttons
+                    const presentBtn = studentCard.querySelector('.btn-present');
+                    const absentBtn = studentCard.querySelector('.btn-absent');
+
+                    presentBtn.classList.toggle('active', status === 'present');
+                    absentBtn.classList.toggle('active', status === 'absent');
+
+                    this.updateSummary();
+                    showNotification(`Marked ${status} successfully!`, 'success');
+                } catch (error) {
+                    console.error('Failed to mark attendance:', error);
+                }
+            }
+
+            updateSummary() {
+                const total = this.students.length;
+                const present = Object.values(this.attendanceData).filter(status => status === 'present').length;
+                const absent = Object.values(this.attendanceData).filter(status => status === 'absent').length;
+                const unmarked = total - present - absent;
+
+                const summary = document.getElementById('attendance-summary');
+                if (summary) {
+                    summary.innerHTML = `
+                        <span class="text-success">Present: ${present}</span> | 
+                        <span class="text-danger">Absent: ${absent}</span> | 
+                        <span class="text-secondary">Unmarked: ${unmarked}</span>
+                    `;
+                }
+            }
+
+            async generateReport() {
+                const modal = document.getElementById('report-modal');
+                const content = document.getElementById('report-content');
+
+                modal.style.display = 'flex';
+                content.innerHTML = '<div class="loading"></div>';
+
+                try {
+                    const data = await app.apiCall(`/teacher/attendance-report/${this.selectedSubject}`);
+
+                    content.innerHTML = `
+                        <div class="mb-4">
+                            <h4>Subject: ${data.subject}</h4>
+                            <p class="text-secondary">Total Students: ${data.report.length}</p>
+                        </div>
+                        
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Roll Number</th>
+                                        <th>Present Days</th>
+                                        <th>Total Days</th>
+                                        <th>Percentage</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.report.map(student => {
+                        const statusClass = student.percentage >= 75 ? 'success' :
+                            student.percentage >= 65 ? 'warning' : 'danger';
+                        return `
+                                            <tr>
+                                                <td>${student.student}</td>
+                                                <td>${student.rollNumber}</td>
+                                                <td>${student.presentDays}</td>
+                                                <td>${student.totalDays}</td>
+                                                <td class="text-${statusClass}">${student.percentage}%</td>
+                                                <td>
+                                                    <span class="status status-${statusClass}">
+                                                        ${student.percentage >= 75 ? 'Good' :
+                                student.percentage >= 65 ? 'Average' : 'Low'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        `;
+                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } catch (error) {
+                    content.innerHTML = '<p class="text-danger">Failed to generate report</p>';
+                }
+            }
+
+            clearStudents() {
+                document.getElementById('students-container').innerHTML = `
+                    <div class="text-center py-4">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
+                        <h3>Select a subject to mark attendance</h3>
+                        <p class="text-secondary">Choose a subject from the dropdown above</p>
+                    </div>
+                `;
+                document.getElementById('bulk-actions').style.display = 'none';
+            }
+        }
+
+        let teacherAttendance;
+
+        function markAttendance(studentId, status) {
+            teacherAttendance.markAttendance(studentId, status);
+        }
+
+        function markAllPresent() {
+            teacherAttendance.students.forEach(student => {
+                teacherAttendance.markAttendance(student._id, 'present');
+            });
+        }
+
+        function markAllAbsent() {
+            teacherAttendance.students.forEach(student => {
+                teacherAttendance.markAttendance(student._id, 'absent');
+            });
+        }
+
+        function closeReportModal() {
+            document.getElementById('report-modal').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            teacherAttendance = new TeacherAttendance();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Management - College MS</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="/" class="logo">College MS</a>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="users.html">Users</a></li>
+                <li><a href="classes.html" class="active">Classes</a></li>
+                <li><a href="announcements.html">Announcements</a></li>
+                <li class="keep"><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+                <li class="keep"><button onclick="logout()" class="btn btn-danger">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container main-content">
+        <div class="dashboard-header">
+            <h1>🏫 Class Management</h1>
+            <p>Manage classes, subjects, and teacher assignments</p>
+        </div>
+
+        <!-- Controls -->
+        <div class="card mb-3">
+            <div class="grid grid-cols-3">
+                <div class="form-group">
+                    <label class="form-label">Quick Actions</label>
+                    <div class="flex gap-2">
+                        <button onclick="createClass()" class="btn btn-primary">➕ Add Class</button>
+                        <button onclick="createSubject()" class="btn btn-success">📚 Add Subject</button>
+                        <button onclick="refreshData()" class="btn btn-secondary">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Filter Classes</label>
+                    <select id="branch-filter" class="form-select">
+                        <option value="">All Branches</option>
+                        <option value="CSE">Computer Science</option>
+                        <option value="ECE">Electronics</option>
+                        <option value="ME">Mechanical</option>
+                        <option value="CE">Civil</option>
+                        <option value="EEE">Electrical</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">System Stats</label>
+                    <div id="class-stats" class="text-secondary">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Classes Grid -->
+        <div id="classes-container">
+            <div class="loading"></div>
+        </div>
+
+        <!-- Create Class Modal -->
+        <div id="class-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Create New Class</h3>
+                <form id="class-form">
+                    <div class="grid grid-cols-2">
+                        <div class="form-group">
+                            <label class="form-label">Class Name</label>
+                            <input type="text" name="name" class="form-input" placeholder="e.g., CSE-2024-A" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Section</label>
+                            <select name="section" class="form-select" required>
+                                <option value="">Select Section</option>
+                                <option value="A">Section A</option>
+                                <option value="B">Section B</option>
+                                <option value="C">Section C</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2">
+                        <div class="form-group">
+                            <label class="form-label">Branch</label>
+                            <select name="branch" class="form-select" required>
+                                <option value="">Select Branch</option>
+                                <option value="CSE">Computer Science</option>
+                                <option value="ECE">Electronics</option>
+                                <option value="ME">Mechanical</option>
+                                <option value="CE">Civil</option>
+                                <option value="EEE">Electrical</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Year</label>
+                            <select name="year" class="form-select" required>
+                                <option value="">Select Year</option>
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3">3rd Year</option>
+                                <option value="4">4th Year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Class Teacher (Optional)</label>
+                        <select name="classTeacher" id="class-teacher-select" class="form-select">
+                            <option value="">Select Class Teacher</option>
+                        </select>
+                    </div>
+
+                    <div class="flex gap-2 justify-end">
+                        <button type="button" onclick="closeClassModal()" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Class</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Create Subject Modal -->
+        <div id="subject-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Add New Subject</h3>
+                <form id="subject-form">
+                    <div class="grid grid-cols-2">
+                        <div class="form-group">
+                            <label class="form-label">Subject Name</label>
+                            <input type="text" name="name" class="form-input" placeholder="e.g., Data Structures"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Subject Code</label>
+                            <input type="text" name="code" class="form-input" placeholder="e.g., CS201" required>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2">
+                        <div class="form-group">
+                            <label class="form-label">Credits</label>
+                            <input type="number" name="credits" class="form-input" min="1" max="6" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Class</label>
+                            <select name="class" id="subject-class-select" class="form-select" required>
+                                <option value="">Select Class</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Assign Teacher</label>
+                        <select name="teacher" id="subject-teacher-select" class="form-select" required>
+                            <option value="">Select Teacher</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description (Optional)</label>
+                        <textarea name="description" class="form-textarea" rows="2"></textarea>
+                    </div>
+
+                    <div class="flex gap-2 justify-end">
+                        <button type="button" onclick="closeSubjectModal()" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-success">Add Subject</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Class Modal -->
+        <div id="edit-class-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Edit Class</h3>
+                <form id="edit-class-form">
+                    <input type="hidden" id="edit-class-id">
+
+                    <div class="grid grid-cols-2">
+                        <div class="form-group">
+                            <label class="form-label">Class Name</label>
+                            <input type="text" id="edit-class-name" name="name" class="form-input" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Section</label>
+                            <select id="edit-class-section" name="section" class="form-select" required>
+                                <option value="A">Section A</option>
+                                <option value="B">Section B</option>
+                                <option value="C">Section C</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2">
+                        <div class="form-group">
+                            <label class="form-label">Branch</label>
+                            <select id="edit-class-branch" name="branch" class="form-select" required>
+                                <option value="CSE">Computer Science</option>
+                                <option value="ECE">Electronics</option>
+                                <option value="ME">Mechanical</option>
+                                <option value="CE">Civil</option>
+                                <option value="EEE">Electrical</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Year</label>
+                            <select id="edit-class-year" name="year" class="form-select" required>
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3">3rd Year</option>
+                                <option value="4">4th Year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Class Teacher</label>
+                        <select id="edit-class-teacher" name="classTeacher" class="form-select">
+                            <option value="">Select Class Teacher</option>
+                        </select>
+                    </div>
+
+                    <div class="flex gap-2 justify-end">
+                        <button type="button" onclick="closeEditClassModal()" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Class</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../assets/js/main.js"></script>
+    <script>
+        class ClassManagement {
+            constructor() {
+                this.classes = [];
+                this.subjects = [];
+                this.teachers = [];
+                this.init();
+            }
+
+            init() {
+                this.loadData();
+                this.bindEvents();
+            }
+
+            bindEvents() {
+                const branchFilter = document.getElementById('branch-filter');
+                const classForm = document.getElementById('class-form');
+                const subjectForm = document.getElementById('subject-form');
+                const editClassForm = document.getElementById('edit-class-form');
+
+                branchFilter.addEventListener('change', () => this.filterClasses());
+                classForm.addEventListener('submit', this.handleClassCreate.bind(this));
+                subjectForm.addEventListener('submit', this.handleSubjectCreate.bind(this));
+                editClassForm.addEventListener('submit', this.handleClassUpdate.bind(this));
+            }
+
+            async loadData() {
+                try {
+                    const [classesData, teachersData] = await Promise.all([
+                        app.apiCall('/admin/classes'),
+                        app.apiCall('/admin/teachers')
+                    ]);
+
+                    this.classes = classesData.classes;
+                    this.teachers = teachersData.teachers;
+
+                    this.renderClasses();
+                    this.updateStats();
+                } catch (error) {
+                    console.error('Failed to load data:', error);
+                }
+            }
+
+            filterClasses() {
+                const branchFilter = document.getElementById('branch-filter').value;
+                const filteredClasses = branchFilter ?
+                    this.classes.filter(cls => cls.branch === branchFilter) :
+                    this.classes;
+
+                this.renderClasses(filteredClasses);
+            }
+
+            renderClasses(classesToRender = this.classes) {
+                const container = document.getElementById('classes-container');
+
+                if (classesToRender.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-4">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">🏫</div>
+                            <h3>No classes found</h3>
+                            <p class="text-secondary">Create your first class to get started</p>
+                            <button onclick="createClass()" class="btn btn-primary mt-2">➕ Create Class</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="grid grid-cols-1">
+                        ${classesToRender.map(cls => `
+                            <div class="card">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <h4 class="mb-1">${cls.name}</h4>
+                                        <p class="text-secondary">${cls.branch} - Year ${cls.year} - Section ${cls.section}</p>
+                                    </div>
+                                    <div class="flex gap-1">
+                                        <button onclick="editClass('${cls._id}')" class="btn btn-sm btn-primary">✏️</button>
+                                        <button onclick="deleteClass('${cls._id}', '${cls.name}')" class="btn btn-sm btn-danger">🗑️</button>
+                                        <button onclick="viewClass('${cls._id}')" class="btn btn-sm btn-outline">👁️</button>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-3 mb-3">
+                                    <div class="text-center">
+                                        <div class="metric-value text-primary">${cls.studentCount || 0}</div>
+                                        <div class="metric-label">Students</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="metric-value text-success">${cls.subjects?.length || 0}</div>
+                                        <div class="metric-label">Subjects</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="metric-value text-warning">${cls.classTeacher ? '✅' : '❌'}</div>
+                                        <div class="metric-label">Class Teacher</div>
+                                    </div>
+                                </div>
+
+                                ${cls.classTeacher ? `
+                                    <div class="flex items-center gap-2 p-2 bg-light rounded mb-3">
+                                        <span class="text-sm">👨‍🏫 Class Teacher:</span>
+                                        <strong>${cls.classTeacher.name}</strong>
+                                        <span class="text-secondary">(${cls.classTeacher.email})</span>
+                                    </div>
+                                ` : ''}
+
+                                ${cls.subjects && cls.subjects.length > 0 ? `
+                                    <div>
+                                        <h5 class="mb-2">📚 Subjects (${cls.subjects.length})</h5>
+                                        <div class="grid grid-cols-2">
+                                            ${cls.subjects.map(subject => `
+                                                <div class="text-sm p-2 border rounded mb-1">
+                                                    <div class="font-weight-600">${subject.name}</div>
+                                                    <div class="text-secondary">
+                                                        ${subject.code} • ${subject.credits} credits
+                                                        ${subject.teacher ? `• ${subject.teacher.name}` : '• No teacher assigned'}
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div class="text-center text-secondary py-2">
+                                        <p>No subjects assigned</p>
+                                        <button onclick="createSubject('${cls._id}')" class="btn btn-sm btn-outline">Add Subject</button>
+                                    </div>
+                                `}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            updateStats() {
+                const stats = document.getElementById('class-stats');
+                const totalClasses = this.classes.length;
+                const totalStudents = this.classes.reduce((sum, cls) => sum + (cls.studentCount || 0), 0);
+                const totalSubjects = this.classes.reduce((sum, cls) => sum + (cls.subjects?.length || 0), 0);
+
+                stats.innerHTML = `Classes: ${totalClasses} | Students: ${totalStudents} | Subjects: ${totalSubjects}`;
+            }
+
+            async createClass() {
+                // Load teachers for class teacher dropdown
+                const teacherSelect = document.getElementById('class-teacher-select');
+                teacherSelect.innerHTML = '<option value="">Select Class Teacher</option>';
+
+                this.teachers.forEach(teacher => {
+                    teacherSelect.innerHTML += `
+                        <option value="${teacher._id}">${teacher.name} (${teacher.department})</option>
+                    `;
+                });
+
+                document.getElementById('class-modal').style.display = 'flex';
+            }
+
+            async createSubject(preSelectedClassId = null) {
+                // Load classes and teachers
+                const classSelect = document.getElementById('subject-class-select');
+                const teacherSelect = document.getElementById('subject-teacher-select');
+
+                classSelect.innerHTML = '<option value="">Select Class</option>';
+                teacherSelect.innerHTML = '<option value="">Select Teacher</option>';
+
+                this.classes.forEach(cls => {
+                    const option = new Option(`${cls.name} - ${cls.branch} Year ${cls.year}`, cls._id);
+                    if (preSelectedClassId === cls._id) {
+                        option.selected = true;
+                    }
+                    classSelect.add(option);
+                });
+
+                this.teachers.forEach(teacher => {
+                    teacherSelect.innerHTML += `
+                        <option value="${teacher._id}">${teacher.name} (${teacher.department})</option>
+                    `;
+                });
+
+                document.getElementById('subject-modal').style.display = 'flex';
+            }
+
+            async handleClassCreate(e) {
+                e.preventDefault();
+
+                const formData = new FormData(e.target);
+                const classData = Object.fromEntries(formData.entries());
+
+                // Convert empty classTeacher to undefined (optional)
+                if (!classData.classTeacher) delete classData.classTeacher;
+
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+
+                try {
+                    submitBtn.innerHTML = '<div class="loading"></div> Creating...';
+                    submitBtn.disabled = true;
+
+                    // Send POST request
+                    await app.apiCall('/admin/classes', {
+                        method: 'POST',
+                        body: JSON.stringify(classData)
+                    });
+
+                    showNotification('Class created successfully!', 'success');
+                    this.closeClassModal();
+                    this.loadData(); // refresh classes & subjects
+                } catch (error) {
+                    console.error('Failed to create class:', error);
+                    showNotification('Failed to create class. Check console.', 'error');
+                } finally {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            }
+
+
+
+            async handleSubjectCreate(e) {
+                e.preventDefault();
+
+                const formData = new FormData(e.target);
+                const subjectData = Object.fromEntries(formData.entries());
+
+                // Validate required fields
+                if (!subjectData.name || !subjectData.code || !subjectData.credits || !subjectData.class || !subjectData.teacher) {
+                    showNotification('Please fill in all required fields and assign a teacher', 'error');
+                    return;
+                }
+
+                // Ensure numeric fields are stored correctly
+                subjectData.credits = parseInt(subjectData.credits, 10);
+
+                // Optional description
+                if (!subjectData.description) subjectData.description = '';
+
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+
+                try {
+                    submitBtn.innerHTML = '<div class="loading"></div> Creating...';
+                    submitBtn.disabled = true;
+
+                    // Send POST request
+                    await app.apiCall('/admin/subjects', {
+                        method: 'POST',
+                        body: JSON.stringify(subjectData)
+                    });
+
+                    showNotification('Subject added successfully!', 'success');
+                    this.closeSubjectModal();
+                    this.loadData(); // refresh classes & subjects
+                } catch (error) {
+                    console.error('Failed to create subject:', error);
+                    showNotification('Failed to add subject. Check console.', 'error');
+                } finally {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            }
+
+
+
+
+            editClass(classId) {
+                const cls = this.classes.find(c => c._id === classId);
+                if (!cls) return;
+
+                // Populate form
+                document.getElementById('edit-class-id').value = cls._id;
+                document.getElementById('edit-class-name').value = cls.name;
+                document.getElementById('edit-class-section').value = cls.section;
+                document.getElementById('edit-class-branch').value = cls.branch;
+                document.getElementById('edit-class-year').value = cls.year;
+
+                // Load teachers for class teacher dropdown
+                const teacherSelect = document.getElementById('edit-class-teacher');
+                teacherSelect.innerHTML = '<option value="">Select Class Teacher</option>';
+
+                this.teachers.forEach(teacher => {
+                    const option = new Option(`${teacher.name} (${teacher.department})`, teacher._id);
+                    if (cls.classTeacher && cls.classTeacher._id === teacher._id) {
+                        option.selected = true;
+                    }
+                    teacherSelect.add(option);
+                });
+
+                document.getElementById('edit-class-modal').style.display = 'flex';
+            }
+
+            async handleClassUpdate(e) {
+                e.preventDefault();
+
+                const formData = new FormData(e.target);
+                const classData = Object.fromEntries(formData.entries());
+                const classId = document.getElementById('edit-class-id').value;
+
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+
+                try {
+                    submitBtn.innerHTML = '<div class="loading"></div> Updating...';
+                    submitBtn.disabled = true;
+
+                    await app.apiCall(`/admin/classes/${classId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(classData)
+                    });
+
+                    showNotification('Class updated successfully!', 'success');
+                    this.closeEditClassModal();
+                    this.loadData();
+                } catch (error) {
+                    console.error('Failed to update class:', error);
+                } finally {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            }
+
+            async deleteClass(classId, className) {
+                if (!confirm(`Are you sure you want to delete class "${className}"?\n\nThis will also remove all associated subjects and student assignments.`)) {
+                    return;
+                }
+
+                try {
+                    await app.apiCall(`/admin/classes/${classId}`, {
+                        method: 'DELETE'
+                    });
+
+                    showNotification('Class deleted successfully!', 'success');
+                    this.loadData();
+                } catch (error) {
+                    console.error('Failed to delete class:', error);
+                }
+            }
+
+            viewClass(classId) {
+                const cls = this.classes.find(c => c._id === classId);
+                if (!cls) return;
+
+                let content = `
+                    <div class="mb-4">
+                        <h4>${cls.name}</h4>
+                        <p class="text-secondary">${cls.branch} - Year ${cls.year} - Section ${cls.section}</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 mb-4">
+                        <div><strong>Students:</strong> ${cls.studentCount || 0}</div>
+                        <div><strong>Subjects:</strong> ${cls.subjects?.length || 0}</div>
+                        <div><strong>Created:</strong> ${app.formatDate(cls.createdAt)}</div>
+                        <div><strong>Updated:</strong> ${app.formatDate(cls.updatedAt)}</div>
+                    </div>
+                `;
+
+                if (cls.classTeacher) {
+                    content += `
+                        <div class="mb-4">
+                            <h5>👨‍🏫 Class Teacher</h5>
+                            <div class="card">
+                                <strong>${cls.classTeacher.name}</strong><br>
+                                <span class="text-secondary">${cls.classTeacher.email}</span><br>
+                                <span class="text-secondary">Department: ${cls.classTeacher.department || 'N/A'}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (cls.subjects && cls.subjects.length > 0) {
+                    content += `
+                        <div>
+                            <h5>📚 Subjects</h5>
+                            <div class="space-y-2">
+                                ${cls.subjects.map(subject => `
+                                    <div class="card">
+                                        <strong>${subject.name}</strong> (${subject.code})<br>
+                                        <span class="text-secondary">Credits: ${subject.credits}</span><br>
+                                        <span class="text-secondary">Teacher: ${subject.teacher?.name || 'Not assigned'}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                app.showModal(`Class Details - ${cls.name}`, content);
+            }
+
+            closeClassModal() {
+                document.getElementById('class-modal').style.display = 'none';
+                document.getElementById('class-form').reset();
+            }
+
+            closeSubjectModal() {
+                document.getElementById('subject-modal').style.display = 'none';
+                document.getElementById('subject-form').reset();
+            }
+
+            closeEditClassModal() {
+                document.getElementById('edit-class-modal').style.display = 'none';
+            }
+        }
+
+        let classManager;
+
+        // Global functions
+        function createClass() {
+            classManager.createClass();
+        }
+
+        function createSubject(classId) {
+            classManager.createSubject(classId);
+        }
+
+        function editClass(classId) {
+            classManager.editClass(classId);
+        }
+
+        function deleteClass(classId, className) {
+            classManager.deleteClass(classId, className);
+        }
+
+        function viewClass(classId) {
+            classManager.viewClass(classId);
+        }
+
+        function refreshData() {
+            classManager.loadData();
+        }
+
+        function closeClassModal() {
+            classManager.closeClassModal();
+        }
+
+        function closeSubjectModal() {
+            classManager.closeSubjectModal();
+        }
+
+        function closeEditClassModal() {
+            classManager.closeEditClassModal();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            classManager = new ClassManagement();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade Assignments - College MS</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/dashboard.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="/" class="logo">College MS</a>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="attendance.html">Attendance</a></li>
+                <li><a href="grading.html" class="active">Grading</a></li>
+                <li><a href="messages.html">Messages</a></li>
+                <li class="keep"><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+                <li class="keep"><button onclick="logout()" class="btn btn-danger">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container main-content">
+        <div class="dashboard-header">
+            <h1>📋 Grade Assignments</h1>
+            <p>Review and grade student submissions</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-3">
+            <div class="grid grid-cols-2">
+                <div class="form-group">
+                    <label class="form-label">Filter by Subject</label>
+                    <select id="subject-filter" class="form-select">
+                        <option value="">All Subjects</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Filter by Status</label>
+                    <select id="status-filter" class="form-select">
+                        <option value="all">All Assignments</option>
+                        <option value="pending">Pending Grading</option>
+                        <option value="graded">Graded</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignments List -->
+        <div id="assignments-container">
+            <div class="loading"></div>
+        </div>
+
+        <!-- Grading Modal -->
+        <div id="grading-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="assignment-title">Grade Assignment</h3>
+                    <button onclick="closeGradingModal()" class="btn btn-secondary">×</button>
+                </div>
+
+                <div id="submissions-container">
+                    <div class="loading"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Individual Grading Modal -->
+        <div id="grade-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Grade Submission</h3>
+                <div id="submission-details"></div>
+
+                <form id="grading-form">
+                    <div class="grid grid-cols-2">
+                        <div class="form-group">
+                            <label class="form-label">Marks Obtained</label>
+                            <input type="number" id="grade-marks" name="marks" class="form-input" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Maximum Marks</label>
+                            <input type="number" id="max-marks" class="form-input" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Feedback</label>
+                        <textarea name="feedback" class="form-textarea" rows="3"
+                            placeholder="Provide feedback to the student..."></textarea>
+                    </div>
+
+                    <div class="flex gap-2 justify-end">
+                        <button type="button" onclick="closeGradeModal()" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Grade</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../assets/js/main.js"></script>
+    <script>
+        class TeacherGrading {
+            constructor() {
+                this.assignments = [];
+                this.filteredAssignments = [];
+                this.subjects = [];
+                this.currentAssignment = null;
+                this.currentSubmission = null;
+                this.init();
+            }
+
+            init() {
+                this.loadSubjects();
+                this.loadAssignments();
+                this.bindEvents();
+            }
+
+            bindEvents() {
+                const subjectFilter = document.getElementById('subject-filter');
+                const statusFilter = document.getElementById('status-filter');
+                const gradingForm = document.getElementById('grading-form');
+
+                subjectFilter.addEventListener('change', () => this.filterAssignments());
+                statusFilter.addEventListener('change', () => this.filterAssignments());
+                gradingForm.addEventListener('submit', this.handleGrading.bind(this));
+            }
+
+            async loadSubjects() {
+                try {
+                    const data = await app.apiCall('/teacher/subjects');
+                    this.subjects = data.subjects;
+
+                    const filter = document.getElementById('subject-filter');
+                    filter.innerHTML = '<option value="">All Subjects</option>';
+
+                    this.subjects.forEach(subject => {
+                        filter.innerHTML += `
+                            <option value="${subject._id}">${subject.name} - ${subject.class.name}</option>
+                        `;
+                    });
+                } catch (error) {
+                    console.error('Failed to load subjects:', error);
+                }
+            }
+
+            async loadAssignments() {
+                try {
+                    const data = await app.apiCall('/teacher/assignments');
+                    this.assignments = data.assignments;
+                    this.filterAssignments();
+                } catch (error) {
+                    console.error('Failed to load assignments:', error);
+                }
+            }
+
+            filterAssignments() {
+                const subjectFilter = document.getElementById('subject-filter').value;
+                const statusFilter = document.getElementById('status-filter').value;
+
+                this.filteredAssignments = this.assignments.filter(assignment => {
+                    const subjectMatch = !subjectFilter || assignment.subject._id === subjectFilter;
+                    let statusMatch = true;
+
+                    if (statusFilter === 'pending') {
+                        statusMatch = assignment.totalSubmissions > assignment.gradedSubmissions;
+                    } else if (statusFilter === 'graded') {
+                        statusMatch = assignment.gradedSubmissions === assignment.totalSubmissions && assignment.totalSubmissions > 0;
+                    }
+
+                    return subjectMatch && statusMatch;
+                });
+
+                this.renderAssignments();
+            }
+
+            renderAssignments() {
+                const container = document.getElementById('assignments-container');
+
+                if (this.filteredAssignments.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-4">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+                            <h3>No assignments found</h3>
+                            <p class="text-secondary">Try adjusting your filters or create new assignments</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = this.filteredAssignments.map(assignment => {
+                    const pendingCount = assignment.totalSubmissions - assignment.gradedSubmissions;
+                    const statusClass = pendingCount === 0 && assignment.totalSubmissions > 0 ? 'success' :
+                        pendingCount > 0 ? 'warning' : 'secondary';
+
+                    return `
+                        <div class="assignment-card card mb-3">
+                            <div class="assignment-header">
+                                <div>
+                                    <h4 class="assignment-title">${assignment.title}</h4>
+                                    <span class="assignment-subject">${assignment.subject.name}</span>
+                                </div>
+                                <span class="status status-${statusClass}">
+                                    ${pendingCount === 0 && assignment.totalSubmissions > 0 ? 'Completed' :
+                            `${pendingCount} Pending`}
+                                </span>
+                            </div>
+                            
+                            <div class="assignment-meta">
+                                <span>📅 Due: ${app.formatDate(assignment.dueDate)}</span>
+                                <span>📊 Max Marks: ${assignment.maxMarks}</span>
+                                <span>📝 Submissions: ${assignment.totalSubmissions}</span>
+                                <span>✅ Graded: ${assignment.gradedSubmissions}</span>
+                            </div>
+                            
+                            <div class="assignment-description">
+                                ${assignment.description}
+                            </div>
+                            
+                            <div class="assignment-actions">
+                                ${assignment.totalSubmissions > 0 ? `
+                                    <button onclick="openGradingModal('${assignment._id}')" class="btn btn-primary">
+                                        📝 Grade Submissions (${assignment.totalSubmissions})
+                                    </button>
+                                ` : `
+                                    <span class="text-secondary">No submissions yet</span>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            async openGradingModal(assignmentId) {
+                const modal = document.getElementById('grading-modal');
+                const container = document.getElementById('submissions-container');
+
+                modal.style.display = 'flex';
+                container.innerHTML = '<div class="loading"></div>';
+
+                try {
+                    const data = await app.apiCall(`/teacher/assignments/${assignmentId}/submissions`);
+                    this.currentAssignment = data.assignment;
+
+                    document.getElementById('assignment-title').textContent = `Grade: ${data.assignment.title}`;
+
+                    if (data.assignment.submissions.length === 0) {
+                        container.innerHTML = '<p class="text-center text-secondary">No submissions for this assignment</p>';
+                        return;
+                    }
+
+                    container.innerHTML = `
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Roll Number</th>
+                                        <th>Submitted</th>
+                                        <th>Status</th>
+                                        <th>Grade</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.assignment.submissions.map(submission => {
+                        const isGraded = submission.grade && submission.grade.marks !== undefined;
+                        return `
+                                            <tr>
+                                                <td>
+                                                    <div class="flex items-center gap-2">
+                                                        <img src="${submission.student.profileImage}" alt="${submission.student.name}" class="avatar avatar-sm">
+                                                        ${submission.student.name}
+                                                    </div>
+                                                </td>
+                                                <td>${submission.student.rollNumber}</td>
+                                                <td>
+                                                    ${app.formatDate(submission.submittedAt)}
+                                                    ${submission.isLate ? '<span class="status status-warning">Late</span>' : ''}
+                                                </td>
+                                                <td>
+                                                    <span class="status status-${isGraded ? 'success' : 'warning'}">
+                                                        ${isGraded ? 'Graded' : 'Pending'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    ${isGraded ? `${submission.grade.marks}/${data.assignment.maxMarks}` : '-'}
+                                                </td>
+                                                <td>
+                                                    <button onclick="openGradeModal('${submission._id}')" class="btn btn-sm ${isGraded ? 'btn-secondary' : 'btn-primary'}">
+                                                        ${isGraded ? '✏️ Edit' : '📝 Grade'}
+                                                    </button>
+                                                    <button onclick="viewSubmission('${submission._id}')" class="btn btn-sm btn-outline">👁️ View</button>
+                                                </td>
+                                            </tr>
+                                        `;
+                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } catch (error) {
+                    container.innerHTML = '<p class="text-danger">Failed to load submissions</p>';
+                }
+            }
+
+            openGradeModal(submissionId) {
+                const submission = this.currentAssignment.submissions.find(s => s._id === submissionId);
+                if (!submission) return;
+
+                this.currentSubmission = submission;
+                const modal = document.getElementById('grade-modal');
+
+                // Populate submission details
+                document.getElementById('submission-details').innerHTML = `
+                    <div class="card mb-3">
+                        <h5>Submission by: ${submission.student.name}</h5>
+                        <p><strong>Submitted:</strong> ${app.formatDate(submission.submittedAt)}</p>
+                        ${submission.isLate ? '<span class="status status-warning">Late Submission</span>' : ''}
+                        
+                        ${submission.content ? `
+                            <div class="mt-3">
+                                <strong>Content:</strong>
+                                <p class="mt-1">${submission.content}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${submission.files && submission.files.length > 0 ? `
+                            <div class="mt-3">
+                                <strong>Files:</strong>
+                                ${submission.files.map(file => `
+                                    <a href="${file}" target="_blank" class="btn btn-sm btn-outline ml-1">📁 View File</a>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                // Pre-fill form if already graded
+                const marksInput = document.getElementById('grade-marks');
+                const maxMarksInput = document.getElementById('max-marks');
+                const feedbackInput = document.querySelector('#grading-form textarea[name="feedback"]');
+
+                maxMarksInput.value = this.currentAssignment.maxMarks;
+
+                if (submission.grade) {
+                    marksInput.value = submission.grade.marks;
+                    feedbackInput.value = submission.grade.feedback || '';
+                } else {
+                    marksInput.value = '';
+                    feedbackInput.value = '';
+                }
+
+                modal.style.display = 'flex';
+            }
+
+            async handleGrading(e) {
+                e.preventDefault();
+
+                const formData = new FormData(e.target);
+                const gradeData = Object.fromEntries(formData.entries());
+
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+
+                try {
+                    submitBtn.innerHTML = '<div class="loading"></div> Saving...';
+                    submitBtn.disabled = true;
+
+                    await app.apiCall(`/teacher/assignments/${this.currentAssignment._id}/grade/${this.currentSubmission._id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(gradeData)
+                    });
+
+                    showNotification('Grade saved successfully!', 'success');
+                    this.closeGradeModal();
+
+                    // Refresh the grading modal
+                    this.openGradingModal(this.currentAssignment._id);
+
+                    // Refresh assignments list
+                    this.loadAssignments();
+
+                } catch (error) {
+                    console.error('Failed to save grade:', error);
+                } finally {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            }
+
+            closeGradingModal() {
+                document.getElementById('grading-modal').style.display = 'none';
+            }
+
+            closeGradeModal() {
+                document.getElementById('grade-modal').style.display = 'none';
+            }
+
+            viewSubmission(submissionId) {
+                const submission = this.currentAssignment.submissions.find(s => s._id === submissionId);
+                if (!submission) return;
+
+                let content = `
+                    <h4>Submission by: ${submission.student.name}</h4>
+                    <p><strong>Roll Number:</strong> ${submission.student.rollNumber}</p>
+                    <p><strong>Submitted:</strong> ${app.formatDate(submission.submittedAt)}</p>
+                    ${submission.isLate ? '<p><span class="status status-warning">Late Submission</span></p>' : ''}
+                `;
+
+                if (submission.content) {
+                    content += `
+                        <div class="mt-3">
+                            <strong>Content:</strong>
+                            <div class="card mt-1">${submission.content}</div>
+                        </div>
+                    `;
+                }
+
+                if (submission.files && submission.files.length > 0) {
+                    content += `
+                        <div class="mt-3">
+                            <strong>Attached Files:</strong><br>
+                            ${submission.files.map(file => `
+                                <a href="${file}" target="_blank" class="btn btn-sm btn-outline mr-1 mt-1">📁 View File</a>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                if (submission.grade) {
+                    content += `
+                        <div class="mt-3">
+                            <strong>Grade:</strong> ${submission.grade.marks}/${this.currentAssignment.maxMarks}
+                            ${submission.grade.feedback ? `<br><strong>Feedback:</strong> ${submission.grade.feedback}` : ''}
+                        </div>
+                    `;
+                }
+
+                app.showModal('Submission Details', content);
+            }
+        }
+
+        let teacherGrading;
+
+        function openGradingModal(assignmentId) {
+            teacherGrading.openGradingModal(assignmentId);
+        }
+
+        function openGradeModal(submissionId) {
+            teacherGrading.openGradeModal(submissionId);
+        }
+
+        function viewSubmission(submissionId) {
+            teacherGrading.viewSubmission(submissionId);
+        }
+
+        function closeGradingModal() {
+            teacherGrading.closeGradingModal();
+        }
+
+        function closeGradeModal() {
+            teacherGrading.closeGradeModal();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            teacherGrading = new TeacherGrading();
+        });
+    </script>
+</body>
+
+</html>
